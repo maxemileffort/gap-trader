@@ -9,6 +9,7 @@ from splinter import Browser
 from random import seed, random
 
 from sites import urls
+from settings import CHROMEDRIVER_DIR
 
 def get_gaps(url):
     date = datetime.datetime.now()
@@ -17,7 +18,7 @@ def get_gaps(url):
     location_string = f"./csv's/{local_date}-{local_time}-stocks.csv"
 
     # define the location of the Chrome Driver - CHANGE THIS!!!!!
-    executable_path = {'executable_path': r'C:\Users\maxw2\Desktop\chromedriver_win32\chromedriver'}
+    executable_path = {'executable_path': CHROMEDRIVER_DIR}
 
     # Create a new instance of the browser, make sure we can see it (Headless = False)
     browser = Browser('chrome', **executable_path, headless=False)
@@ -119,3 +120,6 @@ def scraper():
     for link in urls:
         get_gaps(link)
         time.sleep(1)
+
+if __name__ == '__main__':
+    scraper()
