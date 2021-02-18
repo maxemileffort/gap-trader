@@ -1,10 +1,10 @@
 # control
-import time
+import time, getopt, sys
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 
-option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n 6.Scrape, Assess, and Trade\n 7. Exit\n Pick a number.')
+option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n 6. Scrape, Assess, and Trade\n 7. Exit\n Pick a number.')
 
 def present_selection():
     print(option_string)
@@ -75,4 +75,35 @@ def eval_choice(choice):
         print('try again dummy.')
         present_selection()
 
-present_selection()      
+# Get full command-line arguments
+full_cmd_arguments = sys.argv
+
+# Keep all but the first
+argument_list = full_cmd_arguments[1:]
+
+short_options = "123456"
+long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t"]
+
+try:
+    arguments, values = getopt.getopt(argument_list, short_options, long_options)
+except getopt.error as err:
+    # Output error, and return with an error code
+    print (str(err))
+    present_selection()
+    
+# Evaluate given options
+for current_argument, current_value in arguments:
+    if current_argument in ("-1", "--scrape"):
+        eval_choice('1')
+    elif current_argument in ("-2", "--assess"):
+        eval_choice('2')
+    elif current_argument in ("-3", "--trade"):
+        eval_choice('3')
+    elif current_argument in ("-4", "--s-and-a"):
+        eval_choice('4')
+    elif current_argument in ("-5", "--a-and-t"):
+        eval_choice('5')
+    elif current_argument in ("-6", "--s-a-and-t"):
+        eval_choice('6')
+    else:
+        present_selection()

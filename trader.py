@@ -55,25 +55,25 @@ def daily_trader():
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            limit_price = str(last + 0.25)
-            # volume = row['Volume'] # to be used later
-            # gap_up_percent = row['Gap Up%'] # to be used later
-            stop_price = str(round(last * 0.93 - 0.01, 2))
-            sl_limit_price = str(round(last * 0.92 - 0.01, 2))
+            stop_price = str(last + 0.25)
+            volume = row['Volume'] # to be used later
+            gap_up_percent = row['Gap Up%'] # to be used later
+            sl_price = str(round(last * 0.93 - 0.01, 2))
+            # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
             tp_limit_price = str(round(last * 1.20, 2))
-            print(f"Symbol: {symbol} Stop price: {stop_price} sl_limit price: {sl_limit_price} tp_limit price: {tp_limit_price}")
+            # print(f"Symbol: {symbol} Stop Loss price: {sl_price} sl_limit price: {sl_limit_price} tp_limit price: {tp_limit_price}")
+            print(f"Symbol: {symbol} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
 
             try:
                 api.submit_order(
                     symbol=symbol,
                     qty=100,
                     side='buy',
-                    type='limit',
-                    limit_price=limit_price,
+                    type='stop',
+                    stop_price=stop_price,
                     time_in_force='gtc',
                     order_class='bracket',
-                    stop_loss={'stop_price': stop_price,
-                            'limit_price':  sl_limit_price},
+                    stop_loss={'stop_price': sl_price},
                     take_profit={'limit_price': tp_limit_price}
                 )
                 order_num+=1
