@@ -13,9 +13,6 @@ sorted_files = sorted(list_of_files, key=os.path.getctime)
 most_recent_file = list_of_files[-1] # last file should be most recent one
 
 api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL) 
-account = api.get_account()
-print(account)
-print(api.list_positions())
 
 # cancel all open orders
 orders = api.list_orders(status="open")
