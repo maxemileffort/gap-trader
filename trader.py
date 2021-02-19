@@ -14,9 +14,9 @@ def daily_trader():
     most_recent_file = sorted_files[-1] # last file should be most recent one
 
     api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL) 
-    account = api.get_account()
-    print(account)
-    print(api.list_positions())
+    # account = api.get_account()
+    # print(account)
+    # print(api.list_positions())
 
     # cancel all open orders
     orders = api.list_orders(status="open")
@@ -31,12 +31,12 @@ def daily_trader():
     positions = api.list_positions()
     print("Closing profitable positions...")
     for trade in positions:
-        pl = float(trade["unrealized_pl"])
+        pl = float(trade.unrealized_pl)
         if pl > 0:
             # submit sell order for the position
             api.submit_order(
-                symbol=trade["symbol"],
-                qty=trade["qty"],
+                symbol=trade.symbol,
+                qty=trade.qty,
                 side='sell',
                 type='market',
                 time_in_force='gtc'
@@ -58,9 +58,9 @@ def daily_trader():
             stop_price = str(last + 0.25)
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
-            sl_price = str(round(last * 0.93 - 0.01, 2))
+            sl_price = str(round(last * 0.9 - 0.01, 2))
             # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
-            tp_limit_price = str(round(last * 1.20, 2))
+            tp_limit_price = str(round(last * 2, 2))
             # print(f"Symbol: {symbol} Stop Loss price: {sl_price} sl_limit price: {sl_limit_price} tp_limit price: {tp_limit_price}")
             print(f"Symbol: {symbol} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
 

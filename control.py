@@ -3,8 +3,11 @@ import time, getopt, sys
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
+from watchdog import watchdog
 
-option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n 6. Scrape, Assess, and Trade\n 7. Exit\n Pick a number.')
+option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
+                ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 
+                ' 6. Scrape, Assess, and Trade\n 7. Start Watchdog\n 8. Exit\n Pick a number.')
 
 def present_selection():
     print(option_string)
@@ -15,7 +18,7 @@ def eval_choice(choice):
     if choice == '1': # scrape only
         scraper()
         print("working...")
-        time.sleep(40)
+        time.sleep(10)
         print("almost done...")
         time.sleep(10)
         print("done scraping.")
@@ -34,7 +37,7 @@ def eval_choice(choice):
     elif choice == '4': # scrape and assess
         scraper()
         print("working...")
-        time.sleep(40)
+        time.sleep(10)
         print("almost done...")
         time.sleep(10)
         print("done scraping.")
@@ -56,7 +59,7 @@ def eval_choice(choice):
     elif choice == '6': # all 3
         scraper()
         print("working...")
-        time.sleep(40)
+        time.sleep(10)
         print("almost done...")
         time.sleep(10)
         print("done scraping.")
@@ -69,7 +72,11 @@ def eval_choice(choice):
         time.sleep(8)
         print("Orders created.")
         present_selection()
-    elif choice == '7': # exit
+    elif choice == '7': # watchdog
+        print("Starting watchdog...")
+        time.sleep(1)
+        watchdog()
+    elif choice == '8': # exit
         pass
     else: # fat finger or something
         print('try again dummy.')
@@ -90,7 +97,7 @@ except getopt.error as err:
     # Output error, and return with an error code
     print (str(err))
     present_selection()
-    
+
 # Evaluate given options
 for current_argument, current_value in arguments:
     if current_argument in ("-1", "--scrape"):
@@ -107,3 +114,6 @@ for current_argument, current_value in arguments:
         eval_choice('6')
     else:
         present_selection()
+
+if __name__ == "__main__":
+    present_selection()

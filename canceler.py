@@ -29,8 +29,8 @@ print("Closing positions...")
 for trade in positions:
     # submit sell order for the position
     api.submit_order(
-        symbol=trade["symbol"],
-        qty=trade["qty"],
+        symbol=trade.symbol,
+        qty=trade.qty,
         side='sell',
         type='market',
         time_in_force='gtc'

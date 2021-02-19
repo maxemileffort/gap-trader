@@ -34,6 +34,12 @@ def get_gaps(url):
     browser.visit(myurl)
     seed(1)
     time.sleep(random()+1)
+    browser.driver.set_window_size(1524, 1024)
+    time.sleep(random()+1)
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(random()+1)
+    browser.find_by_css('.show-all')[1].click()
+    time.sleep(random()+10)
 
     html = browser.html
 
@@ -47,7 +53,7 @@ def get_gaps(url):
     doc = cleaner.clean_html(html)
 
     doc = lh.fromstring(doc)
-    print(doc)
+    # print(doc)
 
     th_elements = doc.xpath('//th')
     # print([len(T) for T in th_elements[:12]])
@@ -83,10 +89,10 @@ def get_gaps(url):
         for t in T.iterchildren():
             try:
                 data=t.text_content().strip()
-                print(data) 
+                # print(data) 
             except:
                 data=""
-                print(data) 
+                # print(data) 
             #Check if row is empty
             if i>0:
             #Convert any numerical value to integers

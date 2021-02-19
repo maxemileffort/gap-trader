@@ -22,7 +22,7 @@ def assess(str):
 
     if scrape_first == "y" or scrape_first == "Y" or scrape_first == "yes" or scrape_first == "Yes":
         scraper()
-        time.sleep(50)
+        time.sleep(10)
     else:
         pass
 
