@@ -28,11 +28,21 @@ positions = api.list_positions()
 print("Closing positions...")
 for trade in positions:
     # submit sell order for the position
-    api.submit_order(
-        symbol=trade.symbol,
-        qty=trade.qty,
-        side='sell',
-        type='market',
-        time_in_force='gtc'
-    )
+    try:
+        api.submit_order(
+            symbol=trade.symbol,
+            qty=trade.qty,
+            side='sell',
+            type='market',
+            time_in_force='gtc'
+        )
+    # it might be a short position, so try a buy order
+    except:
+        api.submit_order(
+            symbol=trade.symbol,
+            qty=trade.qty,
+            side='buy',
+            type='market',
+            time_in_force='gtc'
+        )
 print("All positions closed.")

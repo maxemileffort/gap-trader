@@ -3,7 +3,7 @@ import time, getopt, sys
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
-from watchdog import watchdog
+from watchdog import check_long_trades
 
 option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
                 ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 
@@ -75,7 +75,9 @@ def eval_choice(choice):
     elif choice == '7': # watchdog
         print("Starting watchdog...")
         time.sleep(1)
-        watchdog()
+        print("1800 runs is ~2 hours of checking...")
+        runs = int(input("How many times should it run?  ") or "1800")
+        check_long_trades(0, runs)
     elif choice == '8': # exit
         pass
     else: # fat finger or something
@@ -88,8 +90,8 @@ full_cmd_arguments = sys.argv
 # Keep all but the first
 argument_list = full_cmd_arguments[1:]
 
-short_options = "123456"
-long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t"]
+short_options = "1234567"
+long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch"]
 
 try:
     arguments, values = getopt.getopt(argument_list, short_options, long_options)
@@ -112,6 +114,8 @@ for current_argument, current_value in arguments:
         eval_choice('5')
     elif current_argument in ("-6", "--s-a-and-t"):
         eval_choice('6')
+    elif current_argument in ("-7", "--watch"):
+        eval_choice('7')
     else:
         present_selection()
 

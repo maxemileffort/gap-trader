@@ -43,38 +43,57 @@ def daily_trader():
             )
     print("Profitable positions closed.")
 
+    print("Getting account balance...")
+    account = api.get_account()
+    buying_power = account.buying_power
+    # plan to use a cash account to avoid PDT rule, so need to spread the 
+    # trades over 3 days to allow cash to settle. Also, using this 
+    # number to automatically calculate qty of shares for each trade
+    daily_investment = round(float(buying_power) / 3, 2)
+    print(daily_investment)
+
+    # count rows
+    with open(most_recent_file, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        print("Counting trades...")
+        num_of_trades = len(list(reader))
+    csvfile.close()
+
     # create orders from most recent gap up analysis
     with open(most_recent_file, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         print("Creating orders...")
-        
+        investment_per_trade = round(daily_investment / num_of_trades, 2)
         order_num = 0
         error_num = 0
         entries = 0
+        print(f"Num of trades is {num_of_trades}")
+        print(f"inv per trade is {investment_per_trade}")
+
         for row in reader:
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            stop_price = str(last + 0.25)
+            stop_price = last + 0.25
+            qty = int(round(investment_per_trade / stop_price, 0))
+            print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
             sl_price = str(round(last * 0.9 - 0.01, 2))
             # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
-            tp_limit_price = str(round(last * 2, 2))
-            # print(f"Symbol: {symbol} Stop Loss price: {sl_price} sl_limit price: {sl_limit_price} tp_limit price: {tp_limit_price}")
-            print(f"Symbol: {symbol} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            # tp_limit_price = str(round(last * 2, 2))
+            # print(f"Symbol: {symbol} target entry: {stop_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            print(f"Symbol: {symbol} target entry: {stop_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
 
             try:
                 api.submit_order(
                     symbol=symbol,
-                    qty=100,
+                    qty=str(qty),
                     side='buy',
                     type='stop',
-                    stop_price=stop_price,
+                    stop_price=str(stop_price),
                     time_in_force='gtc',
-                    order_class='bracket',
-                    stop_loss={'stop_price': sl_price},
-                    take_profit={'limit_price': tp_limit_price}
+                    order_class='simple'
                 )
                 order_num+=1
             except:

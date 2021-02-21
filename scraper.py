@@ -38,7 +38,12 @@ def get_gaps(url):
     time.sleep(random()+1)
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(random()+1)
-    browser.find_by_css('.show-all')[1].click()
+    try:
+        browser.find_by_css('.show-all')[1].click()
+    except:
+        print("element doesn't exist.")
+        pass
+
     time.sleep(random()+10)
 
     html = browser.html
