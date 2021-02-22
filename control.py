@@ -1,13 +1,41 @@
 # control
-import time, getopt, sys
+import time, datetime, getopt, sys, threading
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 from watchdog import check_long_trades
 
+import alpaca_trade_api as tradeapi
+
+from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
+
+api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
+
 option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
                 ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 
                 ' 6. Scrape, Assess, and Trade\n 7. Start Watchdog\n 8. Exit\n Pick a number.')
+
+# automate starting entire script
+def await_market_open():
+    print("checking time...")
+    clock = api.get_clock()
+    if clock.is_open == True:
+        print("Market open, beginning process.")
+        scraper()
+        time.sleep(5)
+        assess('skip')
+        time.sleep(5)
+        daily_trader()
+        time.sleep(5)
+        check_long_trades(0,1800)
+    else:
+        print("market ain't open, sleeping til it does.")
+        openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
+        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+        timeToOpen = int((openingTime - currTime) / 60)
+        print(str(timeToOpen) + " minutes til market open.")
+        time.sleep(60*timeToOpen)    
+        await_market_open()
 
 def present_selection():
     print(option_string)
@@ -16,8 +44,8 @@ def present_selection():
 
 def eval_choice(choice):
     if choice == '1': # scrape only
-        scraper()
         print("working...")
+        scraper()
         time.sleep(10)
         print("almost done...")
         time.sleep(10)
@@ -78,7 +106,9 @@ def eval_choice(choice):
         print("1800 runs is ~2 hours of checking...")
         runs = int(input("How many times should it run?  ") or "1800")
         check_long_trades(0, runs)
-    elif choice == '8': # exit
+    elif choice == '8': # runs all 3 after waiting for market to open
+        await_market_open()
+    elif choice == '9': # exit
         pass
     else: # fat finger or something
         print('try again dummy.')
@@ -90,8 +120,8 @@ full_cmd_arguments = sys.argv
 # Keep all but the first
 argument_list = full_cmd_arguments[1:]
 
-short_options = "1234567"
-long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch"]
+short_options = "12345678"
+long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch", 'auto']
 
 try:
     arguments, values = getopt.getopt(argument_list, short_options, long_options)
@@ -116,6 +146,8 @@ for current_argument, current_value in arguments:
         eval_choice('6')
     elif current_argument in ("-7", "--watch"):
         eval_choice('7')
+    elif current_argument in ("-8", "--auto"):
+        eval_choice('8')
     else:
         present_selection()
 
