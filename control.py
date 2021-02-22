@@ -27,14 +27,19 @@ def await_market_open():
         time.sleep(5)
         daily_trader()
         time.sleep(5)
-        check_long_trades(0,1800)
+        check_long_trades(0)
     else:
         print("market ain't open, sleeping til it does.")
         openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
         currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
         timeToOpen = int((openingTime - currTime) / 60)
         print(str(timeToOpen) + " minutes til market open.")
-        time.sleep(60*timeToOpen)    
+        if timeToOpen > 250:
+            return
+        elif timeToOpen > 10:
+            time.sleep(60*timeToOpen/2)    
+        else:
+            time.sleep(60)    
         await_market_open()
 
 def present_selection():
@@ -103,10 +108,8 @@ def eval_choice(choice):
     elif choice == '7': # watchdog
         print("Starting watchdog...")
         time.sleep(1)
-        print("1800 runs is ~2 hours of checking...")
-        runs = int(input("How many times should it run?  ") or "1800")
-        check_long_trades(0, runs)
-    elif choice == '8': # runs all 3 after waiting for market to open
+        check_long_trades(0)
+    elif choice == '8': # runs all 3 after waiting for market to open, then begins watchdog for 2 hours
         await_market_open()
     elif choice == '9': # exit
         pass
