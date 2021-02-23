@@ -48,6 +48,7 @@ def move_stop(symbol, new_price, orders, qty):
 def delete_stop(order_id):
     api.cancel_order(order_id)
 
+# for stop loss
 def create_stop(symbol, stop_price, qty):
     try:
         api.submit_order(
@@ -62,17 +63,47 @@ def create_stop(symbol, stop_price, qty):
     except:
         pass
 
+# for take profit
+def create_exit(symbol, limit_price, qty):
+    try:
+        api.submit_order(
+            symbol=symbol,
+            qty=qty,
+            side='sell',
+            type='limit',
+            limit_price=limit_price,
+            time_in_force='gtc',
+            order_class='simple'
+        )
+    except:
+        pass
+
+def check_for_exit(symbol, exit_price, orders, qty):
+    match = ''
+    for order in orders:
+        if order.symbol == symbol and order.side == 'sell' and order.type == 'limit':
+            # check for matching limit order
+            match = symbol
+            print(f"found tp for: {symbol}.")
+            break
+    # if we can't find one, create it
+    if match == '':
+        print("No TP found. Creating one.")
+        create_exit(symbol, exit_price, qty)
+
 def check_for_stop(symbol, stop, orders, qty):
     match = ''            
     for order in orders:
+        # check for matching stop order
         if order.symbol == symbol and order.side == 'sell' and order.type == 'stop':
-            # check for matching stop order
             match = symbol
             print(f"found stop for: {match}. Putting it in the right place...")
+            # if new price and old price are different, move the stop
             if stop != float(order.stop_price):
                 # "Move" stop (most times it just gets put in exact same spot)
                 move_stop(symbol, stop, orders, qty)
-                continue
+                break
+            # if new price and old price match, do nothing
             else:
                 print("Stop in right place for now.")
                 continue
@@ -95,9 +126,12 @@ def check_long_trades(count):
             symbol = trade.symbol
             qty = trade.qty
             entry_price = float(trade.avg_entry_price)
+            exit_price = float(trade.avg_entry_price) * 2
             current_price = float(trade.current_price)
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
+            # first make sure tp is set up
+            check_for_exit(symbol, exit_price, orders, qty)
             # lock in free trades @ 5% gain
             if percent_gain >= 5 and percent_gain < 10:
                 check_for_stop(symbol, entry_price, orders, qty)
@@ -157,9 +191,9 @@ def rate_limiter(count):
         local_time = date.strftime("%X")
         cancel_all()
         print(f"Finish time: {local_time} on {local_date}")
-    
+    # slow down time between calls to 5 sec    
     else:
-        time.sleep(1) 
+        time.sleep(2) 
         print("next check in 3...") 
         time.sleep(1)
         print("2...") 

@@ -13,7 +13,7 @@ api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPE
 
 option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
                 ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 
-                ' 6. Scrape, Assess, and Trade\n 7. Start Watchdog\n 8. Exit\n Pick a number.')
+                ' 6. Scrape, Assess, and Trade\n 7. Start Watchdog\n 8. All 4\n 9. Exit\n Pick a number.')
 
 # automate starting entire script
 def await_market_open():
@@ -35,6 +35,8 @@ def await_market_open():
         timeToOpen = int((openingTime - currTime) / 60)
         print(str(timeToOpen) + " minutes til market open.")
         if timeToOpen > 250:
+            # if it's more than 4 hours, it's probably a weekend, so just terminate
+            # and let batch file start the script the next day
             return
         elif timeToOpen > 10:
             time.sleep(60*timeToOpen/2)    
