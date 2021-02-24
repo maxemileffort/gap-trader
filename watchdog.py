@@ -1,6 +1,6 @@
 # watcher 
 
-import re, datetime, time, csv
+import re, datetime, time, csv, threading
 import glob
 import os
 
@@ -60,7 +60,9 @@ def create_stop(symbol, stop_price, qty):
             time_in_force='gtc',
             order_class='simple'
         )
+        return
     except:
+        print("error creating stop")
         pass
 
 # for take profit
@@ -75,7 +77,9 @@ def create_exit(symbol, limit_price, qty):
             time_in_force='gtc',
             order_class='simple'
         )
+        return
     except:
+        print("error creating exit")
         pass
 
 def check_for_exit(symbol, exit_price, orders, qty):
@@ -90,6 +94,7 @@ def check_for_exit(symbol, exit_price, orders, qty):
     if match == '':
         print("No TP found. Creating one.")
         create_exit(symbol, exit_price, qty)
+        return
 
 def check_for_stop(symbol, stop, orders, qty):
     match = ''            
@@ -106,16 +111,14 @@ def check_for_stop(symbol, stop, orders, qty):
             # if new price and old price match, do nothing
             else:
                 print("Stop in right place for now.")
-                continue
+                break
     # if there isn't a matching stop order, create one        
     if match == '':
         print("no stop found! creating one instead.")
         create_stop(symbol, stop, qty)
+        return
 
 def check_long_trades(count):
-    # poor man's "websocket"
-    count+=1
-
     positions = api.list_positions()
     orders = api.list_orders()
     # print(orders)
@@ -170,9 +173,6 @@ def check_long_trades(count):
                 check_for_stop(symbol, round(entry_price*0.9, 2), orders, qty)
                 continue
             
-    rate_limiter(count)
-    
-    
 def rate_limiter(count):
     # rate limit on API of 200 request per min, so this keeps the position and order calls down to about 30 per min, leaving room for modifying stops.
     print(f"Finished run number {count}. Starting next trade check.")
@@ -200,7 +200,17 @@ def rate_limiter(count):
         time.sleep(1) 
         print("1...") 
         time.sleep(1) 
-        check_long_trades(count)
+
+def run_watchdog(count):
+    # poor man's web socket
+    while count < 6500:
+        count+=1
+        tCLT = threading.Thread(target=check_long_trades(count))
+        tCLT.start()
+        tCLT.join()
+        tRL = threading.Thread(target=rate_limiter(count))
+        tRL.start()
+        tRL.join()
 
 if __name__ == "__main__":
-    start_test(count)
+    run_watchdog(count)

@@ -45,6 +45,7 @@ def daily_trader():
 
     print("Getting account balance...")
     account = api.get_account()
+    print(f"account: {account}")
     buying_power = account.buying_power
     # plan to use a cash account to avoid PDT rule, so need to spread the 
     # trades over 3 days to allow cash to settle. Also, using this 
@@ -74,7 +75,7 @@ def daily_trader():
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            stop_price = last + 0.25
+            stop_price = round(last + 0.25, 2)
             qty = int(round(investment_per_trade / stop_price, 0))
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later

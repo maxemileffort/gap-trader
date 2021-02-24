@@ -3,7 +3,7 @@ import time, datetime, getopt, sys, threading
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
-from watchdog import check_long_trades
+from watchdog import run_watchdog
 
 import alpaca_trade_api as tradeapi
 
@@ -27,7 +27,7 @@ def await_market_open():
         time.sleep(5)
         daily_trader()
         time.sleep(5)
-        check_long_trades(0)
+        run_watchdog(0)
     else:
         print("market ain't open, sleeping til it does.")
         openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -37,7 +37,8 @@ def await_market_open():
         if timeToOpen > 250:
             # if it's more than 4 hours, it's probably a weekend, so just terminate
             # and let batch file start the script the next day
-            return
+            print("Try again tomorrow.")
+            sys.exit()
         elif timeToOpen > 10:
             time.sleep(60*timeToOpen/2)    
         else:
@@ -110,7 +111,7 @@ def eval_choice(choice):
     elif choice == '7': # watchdog
         print("Starting watchdog...")
         time.sleep(1)
-        check_long_trades(0)
+        run_watchdog(0)
     elif choice == '8': # runs all 3 after waiting for market to open, then begins watchdog for 2 hours
         await_market_open()
     elif choice == '9': # exit
