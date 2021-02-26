@@ -75,24 +75,25 @@ def daily_trader():
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            stop_price = round(last + 0.25, 2)
-            qty = int(round(investment_per_trade / stop_price, 0))
+            entry_price = round(last + 0.25, 2)
+            qty = int(round(investment_per_trade / entry_price, 0))
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
             sl_price = str(round(last * 0.9 - 0.01, 2))
             # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
             # tp_limit_price = str(round(last * 2, 2))
-            # print(f"Symbol: {symbol} target entry: {stop_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
-            print(f"Symbol: {symbol} target entry: {stop_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            # print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
 
             try:
+                # simple order
                 api.submit_order(
                     symbol=symbol,
                     qty=str(qty),
                     side='buy',
                     type='stop',
-                    stop_price=str(stop_price),
+                    stop_price=str(entry_price),
                     time_in_force='gtc',
                     order_class='simple'
                 )

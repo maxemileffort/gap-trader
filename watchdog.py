@@ -1,9 +1,11 @@
 # watcher 
 
-import re, datetime, time, csv, threading
+import re, datetime, time, csv, threading, sys
 import glob
 import os
+from pathlib import Path
 
+import pandas as pd
 import requests
 import alpaca_trade_api as tradeapi
 
@@ -14,6 +16,7 @@ api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPE
 
 count = 0
 def start_test(count):
+    cancel_all()
     if count < 1:
         count+=1
         symbols = ['AAPL', 'MSFT', 'HLX', 'AES', 'NI', 'CNP', 'BOXL', 'IBIO']
@@ -26,97 +29,178 @@ def start_test(count):
                 type='market',
                 time_in_force='gtc'
             )
-    check_long_trades(0)
+    run_watchdog(0)
 
-def move_stop(symbol, new_price, orders, qty):
+def move_stop(symbol, new_price, qty):
     # search orders list for orders that are sell stop orders with matching symbols, 
     # as that is the stop loss, and move price up to new price
     print(symbol)
     print(new_price)
-    for order in orders:
-        if order.symbol == symbol and order.side == 'sell' and order.type == 'stop':
-            # print("found a matching order")
-            # print(order)
-            # grab order id
-            order_id = order.id
-            # delete old stop
-            delete_stop(order_id)
-            # create new stop
-            create_stop(symbol, new_price, qty)
-            print(f"stop moved for {symbol}")
+
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+
+    # import csv as dataframe
+    df = pd.read_csv(location)
+    print("move stop df:")
+    print(df)
+
+    # rewrite dataframe with new stop
+    index = df.index[df['symbol'] == symbol]
+    df.set_value(index, 'stop_loss', new_price)
+    print("new move stop df:")
+    print(df)
+
+    # rewrite csv with new dataframe
+    df.to_csv(location, index=False)
+
 
 def delete_stop(order_id):
     api.cancel_order(order_id)
 
-# for stop loss
-def create_stop(symbol, stop_price, qty):
-    try:
-        api.submit_order(
-            symbol=symbol,
-            qty=qty,
-            side='sell',
-            type='stop',
-            stop_price=stop_price,
-            time_in_force='gtc',
-            order_class='simple'
-        )
-        return
-    except:
-        print("error creating stop")
-        pass
+# for take profit and stop losses
+def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
+    # find monitor file, or create it
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
 
-# for take profit
-def create_exit(symbol, limit_price, qty):
     try:
-        api.submit_order(
-            symbol=symbol,
-            qty=qty,
-            side='sell',
-            type='limit',
-            limit_price=limit_price,
-            time_in_force='gtc',
-            order_class='simple'
-        )
-        return
-    except:
-        print("error creating exit")
-        pass
+        # import csv as dataframe
+        df = pd.read_csv(location)
+        print("create exit df:")
+        print(df)
+        # construct new row
+        # append new row to df if it doesn't exist already
+        try:
+            # check df for entry
+            locator = df.loc[df[symbol]]
+            print("locator:")
+            print(locator)
+        except:
+            # if it doesn't exist, give a falsy value
+            print("Unexpected error creating exit:", sys.exc_info())
+            locator = False
+            pass
+        if locator:
+            # if an entry exists, don't do anything
+            print("entry exists")
+        else:
+            # otherwise, append the entire row
+            row = [symbol, entry_price, stop_loss, take_profit, qty]
+            print("row:")
+            print(row)
+            df.loc[len(df.index)] = row
+        # save new df as csv
+        print("new create exit df:")
+        print(df)
+        df.to_csv(location, index=False)
+    except FileNotFoundError:
+        # if it doesn't exist, create it and try to access it again
+        print("file not found, creating now.")
+        Path(file_string).touch()
+        with open(location, 'w', newline='') as csvfile:
+            fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+        csvfile.close()
+        print("file created, trying to create exit again.")
+        create_exit(symbol, entry_price, stop_loss, take_profit, qty)
 
-def check_for_exit(symbol, exit_price, orders, qty):
+    
+def check_for_exit(symbol):
+    # WORKING as of 2/26/21
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+    # check for entry by symbol
     match = ''
-    for order in orders:
-        if order.symbol == symbol and order.side == 'sell' and order.type == 'limit':
-            # check for matching limit order
-            match = symbol
-            print(f"found tp for: {symbol}.")
-            break
-    # if we can't find one, create it
-    if match == '':
-        print("No TP found. Creating one.")
-        create_exit(symbol, exit_price, qty)
-        return
+    try:
+        with open(location, 'r', newline='') as csvfile:
+            print("found monitor")
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row["symbol"] == symbol:
+                    # did find entry in monitor
+                    print("found entry in monitor")
+                    match = symbol        
+                else:
+                    # didn't find entry in monitor
+                    print("did not find entry this time")
+                    continue
+    except FileNotFoundError:
+        print("monitor file not found...")
+        return False
+    
+    if match:
+        return True
+    else:
+        return False
 
-def check_for_stop(symbol, stop, orders, qty):
-    match = ''            
-    for order in orders:
-        # check for matching stop order
-        if order.symbol == symbol and order.side == 'sell' and order.type == 'stop':
-            match = symbol
-            print(f"found stop for: {match}. Putting it in the right place...")
-            # if new price and old price are different, move the stop
-            if stop != float(order.stop_price):
-                # "Move" stop (most times it just gets put in exact same spot)
-                move_stop(symbol, stop, orders, qty)
-                break
-            # if new price and old price match, do nothing
+def check_for_stop(symbol, new_stop, qty):
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+
+    # check for entry by symbol
+    print("checking stop")
+    with open(location, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # did find entry in monitor
+            if row["symbol"] == symbol:
+                print(row)
+                # check for matching stop order
+                try:
+                    # if new price and old price are different, move the stop
+                    if new_stop != float(row['stop_loss']):
+                        # "Move" stop (most times it just gets put in exact same spot)
+                        move_stop(symbol, new_stop, qty)
+                        break
+                    # if new price and old price match, do nothing
+                    else:
+                        print("Stop in right place for now.")
+                        break
+                except:
+                    print("Unexpected error moving stop:", sys.exc_info())
+                    pass
+            # didn't find entry in monitor
             else:
-                print("Stop in right place for now.")
-                break
-    # if there isn't a matching stop order, create one        
-    if match == '':
-        print("no stop found! creating one instead.")
-        create_stop(symbol, stop, qty)
-        return
+                print("Problem finding stop.")
+
+def kill_trade(orders, symbol, qty):
+    for order in orders:
+        # print(f"kill trade order: {order}")
+        if symbol == order.symbol:
+            try:
+                api.cancel_order(order.id)
+                print("Orders killed.")
+            except:
+                print("something went wrong closing orders.")
+                print("Unexpected error:", sys.exc_info())
+                pass
+    
+    try:
+        api.submit_order(
+            symbol= symbol,
+            qty = qty,
+            side= "sell",
+            type= "market",
+            time_in_force= "gtc"
+        )
+        print("Killed trade")
+    except:
+        print("something went wrong killing trade.")
+        print("Unexpected error:", sys.exc_info())
+        pass
 
 def check_long_trades(count):
     positions = api.list_positions()
@@ -134,43 +218,52 @@ def check_long_trades(count):
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
             # first make sure tp is set up
-            check_for_exit(symbol, exit_price, orders, qty)
+            print("checking for exit")
+            # first check, on script start up. They should all return false, which leads to creation of the stops and tp's
+            # the rest of the checks are checking to see if the stops are in acceptable ranges for the amount of profit on the
+            # continue lines are important for preventing stops from moving backwards
+            check = check_for_exit(symbol)
+            if check != True:
+                create_exit(symbol, entry_price, round(entry_price*.9, 2), round(exit_price, 2), qty)
+            # kill trade if it drops 10% below entry
+            if percent_gain < -10:
+                kill_trade(orders, symbol, qty)
             # lock in free trades @ 5% gain
-            if percent_gain >= 5 and percent_gain < 10:
-                check_for_stop(symbol, entry_price, orders, qty)
+            elif percent_gain >= 5 and percent_gain < 10:
+                check_for_stop(symbol, entry_price, qty)
                 continue
             # lock in 10% gainers @ 5% gain
             elif percent_gain >= 10 and percent_gain < 15:
-                check_for_stop(symbol, round(entry_price*1.05,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.05,2), qty)
                 continue
             # lock in 15% gainers @ 10% gain
             elif percent_gain >= 15 and percent_gain < 20:
-                check_for_stop(symbol, round(entry_price*1.10,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.10,2), qty)
                 continue
             # lock in 20% gainers @ 15% gain
             elif percent_gain >= 20 and percent_gain < 25:
-                check_for_stop(symbol, round(entry_price*1.15,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.15,2), qty)
                 continue
             # and so on...
             elif percent_gain >= 25 and percent_gain < 30:
-                check_for_stop(symbol, round(entry_price*1.20,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.20,2), qty)
                 continue
             elif percent_gain >= 30 and percent_gain < 35:
-                check_for_stop(symbol, round(entry_price*1.25,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.25,2), qty)
                 continue
             elif percent_gain >= 35 and percent_gain < 40:
-                check_for_stop(symbol, round(entry_price*1.30,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.30,2), qty)
                 continue
             elif percent_gain >= 40 and percent_gain < 45:
-                check_for_stop(symbol, round(entry_price*1.35,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.35,2), qty)
                 continue
             elif percent_gain >= 45 and percent_gain < 50:
-                check_for_stop(symbol, round(entry_price*1.40,2), orders, qty)
+                check_for_stop(symbol, round(entry_price*1.40,2), qty)
                 continue
             # make sure there's a stop in place
             else:
                 print(f"not enough gain to move stops for {symbol}.")
-                check_for_stop(symbol, round(entry_price*0.9, 2), orders, qty)
+                # check_for_stop(symbol, round(entry_price*0.9, 2), orders, qty)
                 continue
             
 def rate_limiter(count):
@@ -191,6 +284,8 @@ def rate_limiter(count):
         local_time = date.strftime("%X")
         cancel_all()
         print(f"Finish time: {local_time} on {local_date}")
+        # because script is started by local batch file, we want it to exit every day
+        sys.exit()
     # slow down time between calls to 5 sec    
     else:
         time.sleep(2) 
@@ -213,4 +308,5 @@ def run_watchdog(count):
         tRL.join()
 
 if __name__ == "__main__":
-    run_watchdog(count)
+    # run_watchdog(0)
+    start_test(0)
