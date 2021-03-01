@@ -42,11 +42,11 @@ def kill_trade_or_not(symbol, current_price, qty, orders):
     df = pd.read_csv(location)
     filt = df['symbol'] == symbol
     stop_loss = df.loc[filt, 'stop_loss']
-    print(stop_loss)
-    print(stop_loss.stop_loss)
+    # print(stop_loss)
+    # print(stop_loss.iloc[0])
     # if current_price is below stop, cancel orders and sell of position
     try:
-        if float(current_price) <= float(stop_loss.stop_loss):
+        if float(current_price) <= float(stop_loss.iloc[0]):
             print("Kill trade.")
             kill_trade(orders, symbol, qty)
         else:
@@ -133,7 +133,7 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
     except FileNotFoundError:
         # if it doesn't exist, create it and try to access it again
         print("file not found, creating now.")
-        Path(file_string).touch()
+        Path(location).touch()
         with open(location, 'w', newline='') as csvfile:
             fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -154,16 +154,17 @@ def check_for_exit(symbol):
     match = ''
     try:
         with open(location, 'r', newline='') as csvfile:
-            print("found monitor")
+            # print("found monitor")
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row["symbol"] == symbol:
                     # did find entry in monitor
-                    print("found entry in monitor")
+                    # print("found entry in monitor")
                     match = symbol        
+                    break
                 else:
                     # didn't find entry in monitor
-                    print("did not find entry this time")
+                    # print("did not find entry this time")
                     continue
     except FileNotFoundError:
         print("monitor file not found...")
@@ -185,15 +186,18 @@ def check_for_stop(symbol, new_stop, qty):
     print("checking stop")
     with open(location, 'r', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
+        match = ''
         for row in reader:
             # did find entry in monitor
             if row["symbol"] == symbol:
+                match = symbol
                 print(row)
                 # check for matching stop order
                 try:
                     # if new price and old price are different, move the stop
                     if new_stop != float(row['stop_loss']):
                         # "Move" stop (most times it just gets put in exact same spot)
+                        print(f'Moving stop for {symbol} to {new_stop}')
                         move_stop(symbol, new_stop, qty)
                         break
                     # if new price and old price match, do nothing
@@ -203,9 +207,9 @@ def check_for_stop(symbol, new_stop, qty):
                 except:
                     print("Unexpected error checking stop:", sys.exc_info())
                     pass
-            # didn't find entry in monitor
-            else:
-                print("Problem finding stop.")
+        # didn't find entry in monitor
+        if match == '':
+            print("Problem finding stop.")
 
 def kill_trade(orders, symbol, qty):
     # WORKING
@@ -255,8 +259,11 @@ def check_long_trades(count):
             # The rest of the checks are checking to see if the stops are in acceptable ranges for the amount of profit in trade. 
             # "Continue" lines are important for preventing stops from moving backwards
             check = check_for_exit(symbol)
+            # if the exits don't exist, create them
             if check != True:
                 create_exit(symbol, entry_price, round(entry_price*.9, 2), round(exit_price, 2), qty)
+            # check current trades to see if it's time for an exit
+            kill_trade_or_not(symbol, current_price, qty, orders)
             # kill trade if it drops 10% below entry
             if percent_gain < -10:
                 kill_trade(orders, symbol, qty)
@@ -296,7 +303,6 @@ def check_long_trades(count):
             # make sure there's a stop in place, or just log that there isn't enough profit to move stop
             else:
                 print(f"not enough gain to move stops for {symbol}.")
-                # check_for_stop(symbol, round(entry_price*0.9, 2), orders, qty)
                 continue
             
 def rate_limiter(count):
@@ -321,13 +327,8 @@ def rate_limiter(count):
         sys.exit()
     # slow down time between calls to 5 sec    
     else:
-        time.sleep(2) 
-        print("next check in 3...") 
-        time.sleep(1)
-        print("2...") 
-        time.sleep(1) 
-        print("1...") 
-        time.sleep(1) 
+        print("next check in 5...") 
+        time.sleep(5) 
 
 def run_watchdog(count):
     # poor man's web socket
