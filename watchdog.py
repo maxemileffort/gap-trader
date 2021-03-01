@@ -31,6 +31,25 @@ def start_test(count):
             )
     run_watchdog(0)
 
+def kill_trade_or_not(symbol, current_price, qty, orders):
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+
+    # import csv as dataframe
+    df = pd.read_csv(location)
+    filt = df['symbol'] == symbol
+    stop_loss = df.loc[filt, 'stop_loss']
+    print(stop_loss)
+    print(stop_loss.stop_loss)
+    # if current_price is below stop, cancel orders and sell of position
+    if float(current_price) <= float(stop_loss.stop_loss):
+        kill_trade(orders, symbol, qty)
+    else:
+        print("Current price still above stop_loss")
+
 def move_stop(symbol, new_price, qty):
     # search orders list for orders that are sell stop orders with matching symbols, 
     # as that is the stop loss, and move price up to new price
@@ -49,10 +68,16 @@ def move_stop(symbol, new_price, qty):
     print(df)
 
     # rewrite dataframe with new stop
-    index = df.index[df['symbol'] == symbol]
-    df.set_value(index, 'stop_loss', new_price)
-    print("new move stop df:")
-    print(df)
+    # use df.loc to do this. video: https://www.youtube.com/watch?v=DCDe29sIKcE&list=RDCMUCCezIgC97PvUuR4_gbFUs5g&index=5
+    try:
+        filt = df['symbol'] == symbol
+        df.loc[filt, 'stop_loss'] = new_price
+        print("new move stop df:")
+        print(df)
+    except:
+        print("Unexpected error moving stop:", sys.exc_info())
+        print("unchanged move stop df:")
+        print(df)
 
     # rewrite csv with new dataframe
     df.to_csv(location, index=False)
@@ -68,7 +93,7 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
     local_date = _date.strftime("%x").replace("/", "_")
     file_string = f"monitor-{local_date}.csv"
     location = f"./csv's/monitors/{file_string}"
-
+    print("Creating exit...")
     try:
         # import csv as dataframe
         df = pd.read_csv(location)
@@ -170,13 +195,14 @@ def check_for_stop(symbol, new_stop, qty):
                         print("Stop in right place for now.")
                         break
                 except:
-                    print("Unexpected error moving stop:", sys.exc_info())
+                    print("Unexpected error checking stop:", sys.exc_info())
                     pass
             # didn't find entry in monitor
             else:
                 print("Problem finding stop.")
 
 def kill_trade(orders, symbol, qty):
+    # WORKING
     for order in orders:
         # print(f"kill trade order: {order}")
         if symbol == order.symbol:
@@ -219,15 +245,16 @@ def check_long_trades(count):
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
             # first make sure tp is set up
             print("checking for exit")
-            # first check, on script start up. They should all return false, which leads to creation of the stops and tp's
-            # the rest of the checks are checking to see if the stops are in acceptable ranges for the amount of profit on the
-            # continue lines are important for preventing stops from moving backwards
+            # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
+            # The rest of the checks are checking to see if the stops are in acceptable ranges for the amount of profit in trade. 
+            # "Continue" lines are important for preventing stops from moving backwards
             check = check_for_exit(symbol)
             if check != True:
                 create_exit(symbol, entry_price, round(entry_price*.9, 2), round(exit_price, 2), qty)
             # kill trade if it drops 10% below entry
             if percent_gain < -10:
                 kill_trade(orders, symbol, qty)
+                # WORKING up to this point
             # lock in free trades @ 5% gain
             elif percent_gain >= 5 and percent_gain < 10:
                 check_for_stop(symbol, entry_price, qty)
@@ -260,7 +287,7 @@ def check_long_trades(count):
             elif percent_gain >= 45 and percent_gain < 50:
                 check_for_stop(symbol, round(entry_price*1.40,2), qty)
                 continue
-            # make sure there's a stop in place
+            # make sure there's a stop in place, or just log that there isn't enough profit to move stop
             else:
                 print(f"not enough gain to move stops for {symbol}.")
                 # check_for_stop(symbol, round(entry_price*0.9, 2), orders, qty)
