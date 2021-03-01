@@ -1,6 +1,6 @@
 # trader 
 
-import re, datetime, time, csv
+import csv
 import glob
 import os
 

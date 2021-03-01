@@ -1,12 +1,11 @@
 # watcher 
 
-import re, datetime, time, csv, threading, sys
+import datetime, time, csv, threading, sys
 import glob
 import os
 from pathlib import Path
 
 import pandas as pd
-import requests
 import alpaca_trade_api as tradeapi
 
 from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL

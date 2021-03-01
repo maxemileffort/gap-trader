@@ -44,7 +44,8 @@ def get_gaps(url):
         print("element doesn't exist.")
         pass
 
-    time.sleep(random()+10)
+    # add a little randomness to using the page
+    time.sleep(random()+random()*10+5)
 
     html = browser.html
 
@@ -54,6 +55,7 @@ def get_gaps(url):
 
     doc = lh.fromstring(html)
 
+    # remove ads and other scripts
     cleaner = Cleaner(page_structure=False, links=False)
     doc = cleaner.clean_html(html)
 
@@ -106,7 +108,7 @@ def get_gaps(url):
                 except:
                     pass
             #Append the data to the empty list of the i'th column
-            print(f"i: {i}")
+            # print(f"i: {i}")
             col[i][1].append(data)
             #Increment i for the next column
             i+=1
@@ -121,7 +123,7 @@ def get_gaps(url):
 
     print("from scraper.py:")
     print(df.head())
-    print(df.dtypes)
+    # print(df.dtypes)
 
     df.to_csv(path_or_buf=location_string)
 
