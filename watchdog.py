@@ -39,16 +39,23 @@ def kill_trade_or_not(symbol, current_price, qty, orders):
     location = f"./csv's/monitors/{file_string}"
 
     # import csv as dataframe
+    print("Kill trade or not...")
     df = pd.read_csv(location)
     filt = df['symbol'] == symbol
     stop_loss = df.loc[filt, 'stop_loss']
     print(stop_loss)
     print(stop_loss.stop_loss)
     # if current_price is below stop, cancel orders and sell of position
-    if float(current_price) <= float(stop_loss.stop_loss):
-        kill_trade(orders, symbol, qty)
-    else:
-        print("Current price still above stop_loss")
+    try:
+        if float(current_price) <= float(stop_loss.stop_loss):
+            print("Kill trade.")
+            kill_trade(orders, symbol, qty)
+        else:
+            print("Not kill trade.")
+            print("Current price still above stop_loss")
+    except:
+        print("Unexpected error checking stops:", sys.exc_info())
+        pass
 
 def move_stop(symbol, new_price, qty):
     # search orders list for orders that are sell stop orders with matching symbols, 
