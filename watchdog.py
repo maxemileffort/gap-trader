@@ -10,6 +10,9 @@ import alpaca_trade_api as tradeapi
 
 from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
 from canceler import cancel_all
+from scraper import scraper
+from trader import daily_trader
+from assessor import assess
 
 api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
 
@@ -44,7 +47,7 @@ def kill_trade_or_not(symbol, current_price, qty, orders):
     stop_loss = df.loc[filt, 'stop_loss']
     # print(stop_loss)
     # print(stop_loss.iloc[0])
-    # if current_price is below stop, cancel orders and sell of position
+    # if current_price is below stop, cancel orders and sell off position
     try:
         if float(current_price) <= float(stop_loss.iloc[0]):
             print("Kill trade.")
@@ -88,10 +91,6 @@ def move_stop(symbol, new_price, qty):
     # rewrite csv with new dataframe
     df.to_csv(location, index=False)
 
-
-def delete_stop(order_id):
-    api.cancel_order(order_id)
-
 # for take profit and stop losses
 def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
     # find monitor file, or create it
@@ -103,17 +102,17 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
     try:
         # import csv as dataframe
         df = pd.read_csv(location)
-        print("create exit df:")
-        print(df)
+        # print("create exit df:")
+        # print(df)
         # construct new row
         # append new row to df if it doesn't exist already
         try:
             # check df for entry
             locator = df.loc[df[symbol]]
-            print("locator:")
-            print(locator)
+            # print("locator:")
+            # print(locator)
         except:
-            # if it doesn't exist, give a falsy value
+            # if it doesn't exist, return False and print the error
             print("Unexpected error creating exit:", sys.exc_info())
             locator = False
             pass
@@ -123,12 +122,12 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
         else:
             # otherwise, append the entire row
             row = [symbol, entry_price, stop_loss, take_profit, qty]
-            print("row:")
-            print(row)
+            # print("row:")
+            # print(row)
             df.loc[len(df.index)] = row
         # save new df as csv
-        print("new create exit df:")
-        print(df)
+        # print("new create exit df:")
+        # print(df)
         df.to_csv(location, index=False)
     except FileNotFoundError:
         # if it doesn't exist, create it and try to access it again
@@ -191,11 +190,11 @@ def check_for_stop(symbol, new_stop, qty):
             # did find entry in monitor
             if row["symbol"] == symbol:
                 match = symbol
-                print(row)
+                # print(row)
                 # check for matching stop order
                 try:
-                    # if new price and old price are different, move the stop
-                    if new_stop != float(row['stop_loss']):
+                    # if new price and old price are different, move the stop only if the new stop is greater than the old stop
+                    if new_stop != float(row['stop_loss']) and new_stop > float(row['stop_loss']):
                         # "Move" stop (most times it just gets put in exact same spot)
                         print(f'Moving stop for {symbol} to {new_stop}')
                         move_stop(symbol, new_stop, qty)
@@ -213,6 +212,7 @@ def check_for_stop(symbol, new_stop, qty):
 
 def kill_trade(orders, symbol, qty):
     # WORKING
+    # first remove pending orders related to symbol
     for order in orders:
         # print(f"kill trade order: {order}")
         if symbol == order.symbol:
@@ -223,7 +223,7 @@ def kill_trade(orders, symbol, qty):
                 print("something went wrong closing orders.")
                 print("Unexpected error:", sys.exc_info())
                 pass
-    
+    # then end the trade
     try:
         api.submit_order(
             symbol= symbol,
@@ -238,7 +238,7 @@ def kill_trade(orders, symbol, qty):
         print("Unexpected error:", sys.exc_info())
         pass
 
-def check_long_trades(count):
+def check_long_trades():
     positions = api.list_positions()
     orders = api.list_orders()
     # print(orders)
@@ -300,7 +300,7 @@ def check_long_trades(count):
             elif percent_gain >= 45 and percent_gain < 50:
                 check_for_stop(symbol, round(entry_price*1.40,2), qty)
                 continue
-            # make sure there's a stop in place, or just log that there isn't enough profit to move stop
+            # log that there isn't enough profit to move stop
             else:
                 print(f"not enough gain to move stops for {symbol}.")
                 continue
@@ -327,19 +327,28 @@ def rate_limiter(count):
         sys.exit()
     # slow down time between calls to 5 sec    
     else:
-        print("next check in 5...") 
-        time.sleep(5) 
+        print("next check in 3...") 
+        # 3 sec rest here means there's about 60-120 calls per min now
+        time.sleep(3) 
 
 def run_watchdog(count):
     # poor man's web socket
-    while count < 6500:
+    while count < 15000:
         count+=1
-        tCLT = threading.Thread(target=check_long_trades(count))
+        tCLT = threading.Thread(target=check_long_trades)
         tCLT.start()
         tCLT.join()
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
+        # recheck the stocks in the first 15 minutes to make sure things haven't changed too drastically
+        if count == 600 or count == 1200:
+            # cancel open orders and then repeat the process
+            print("rescanning stocks.")
+            api.cancel_all_orders()
+            scraper()
+            assess('skip')
+            daily_trader()
 
 if __name__ == "__main__":
     # run_watchdog(0)

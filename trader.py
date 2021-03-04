@@ -75,7 +75,7 @@ def daily_trader():
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            entry_price = round(last + 0.25, 2)
+            entry_price = round(last + 0.30, 2)
             qty = int(round(investment_per_trade / entry_price, 0))
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
