@@ -75,7 +75,7 @@ def assess(str):
 
     #anazlyze gap downs
     # looking for something that had a high price and has fallen due to recent news
-    # add to a watchlist to profit off of recovery
+    # add to a watchlist to profit off of recovery, or short the stock and profit off price drop
     with open(recent_gap_down, newline='') as csvfile:
         stockreader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
         print("===== Gap Downs: =====")
@@ -106,13 +106,8 @@ def assess(str):
             writer.writerow({"Symbol": stock[0], "Last": stock[1], "Volume": stock[2], "Gap Down%": stock[3],})
     csvfile.close()
 
-    # print("Gap Ups:")
-    # print(gap_ups) # trade these
-    # print("Gap Downs:")
-    # print(gap_downs) # add to a watchlist
-
 if __name__ == '__main__':
-    # if this script is invoked from the command line, default to prompt scraping
+    # if this script is invoked from the command line, default to prompt for scraping
     assess('prompt')
 
 

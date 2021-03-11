@@ -9,22 +9,15 @@ import alpaca_trade_api as tradeapi
 from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
 
 def daily_trader():
-    list_of_files = glob.glob("./csv's/trades/*.csv") # * means all if need specific format then *.csv
+    list_of_files = glob.glob("./csv's/trades/*.csv") 
     sorted_files = sorted(list_of_files, key=os.path.getctime)
     most_recent_file = sorted_files[-1] # last file should be most recent one
 
     api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL) 
-    # account = api.get_account()
-    # print(account)
-    # print(api.list_positions())
 
     # cancel all open orders
-    orders = api.list_orders(status="open")
     print("Canceling orders...")
-
-    for order in orders:
-        api.cancel_order(order.id)
-
+    api.cancel_all_orders()
     print("Orders canceled.")
 
     # close all profitable trades    
@@ -32,7 +25,7 @@ def daily_trader():
     print("Closing profitable positions...")
     for trade in positions:
         pl = float(trade.unrealized_pl)
-        if pl > 0:
+        if pl > 0.0:
             # submit sell order for the position
             api.submit_order(
                 symbol=trade.symbol,
@@ -45,7 +38,8 @@ def daily_trader():
 
     print("Getting account balance...")
     account = api.get_account()
-    print(f"account: {account}")
+    # print(f"account: {account}")
+    # choose between account.equity, .buying_power, or .last_equity for deciding daily_investment
     buying_power = account.buying_power
     # plan to use a cash account to avoid PDT rule, so need to spread the 
     # trades over 3 days to allow cash to settle. Also, using this 

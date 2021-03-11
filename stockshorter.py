@@ -12,7 +12,7 @@ from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_U
 api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
 
 # get latest csv from watches directory
-list_of_files = glob.glob("./csv's/watches/*.csv") # * means all if need specific format then *.csv
+list_of_files = glob.glob("./csv's/watches/*.csv") 
 sorted_files = sorted(list_of_files, key=os.path.getctime)
 recent_gap_down = sorted_files[-1] # last file is most recent
 

@@ -310,13 +310,17 @@ def rate_limiter(count):
     print(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
-    clock = api.get_clock()
-    closingTime = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()
-    currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
-    timeToClose = closingTime - currTime
+    slow_down = count % 200 # clock calls were ending the script prematurely so slowed them down
+    if slow_down == 0:
+        clock = api.get_clock()
+        closingTime = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()
+        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+        timeToClose = closingTime - currTime
+    else:
+        timeToClose = 1200
 
     # Close all positions when 15 minutes til market close.
-    if(timeToClose < (60 * 15)):
+    if(timeToClose < (60 * 10)):
         print("Market closing soon.  Closing positions.")
         date = datetime.datetime.now()
         local_date = date.strftime("%x")
@@ -327,9 +331,8 @@ def rate_limiter(count):
         sys.exit()
     # slow down time between calls to 5 sec    
     else:
-        print("next check in 3...") 
-        # 3 sec rest here means there's about 60-120 calls per min now
-        time.sleep(3) 
+        print("next check in 5...") 
+        time.sleep(5) 
 
 def run_watchdog(count):
     # poor man's web socket
@@ -342,7 +345,8 @@ def run_watchdog(count):
         tRL.start()
         tRL.join()
         # recheck the stocks in the first 15 minutes to make sure things haven't changed too drastically
-        if count == 600 or count == 1200:
+        # potential to mess up currently profitable trades
+        if count == 180:
             # cancel open orders and then repeat the process
             print("rescanning stocks.")
             api.cancel_all_orders()
