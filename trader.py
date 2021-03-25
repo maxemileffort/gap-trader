@@ -74,7 +74,7 @@ def daily_trader():
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
-            sl_price = str(round(last * 0.9 - 0.01, 2))
+            sl_price = str(round(entry_price * 0.9, 2))
             # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
             # tp_limit_price = str(round(last * 2, 2))
             # print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")

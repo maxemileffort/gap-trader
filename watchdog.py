@@ -1,6 +1,4 @@
-# watcher 
-
-import datetime, time, csv, threading, sys
+import datetime, time, csv, threading, sys, subprocess
 import glob
 import os
 from pathlib import Path
@@ -52,9 +50,11 @@ def kill_trade_or_not(symbol, current_price, qty, orders):
         if float(current_price) <= float(stop_loss.iloc[0]):
             print("Kill trade.")
             kill_trade(orders, symbol, qty)
+            return True
         else:
             print("Not kill trade.")
             print("Current price still above stop_loss")
+            return False
     except:
         print("Unexpected error checking stops:", sys.exc_info())
         pass
@@ -143,7 +143,6 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
 
     
 def check_for_exit(symbol):
-    # WORKING as of 2/26/21
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -211,7 +210,6 @@ def check_for_stop(symbol, new_stop, qty):
             print("Problem finding stop.")
 
 def kill_trade(orders, symbol, qty):
-    # WORKING
     # first remove pending orders related to symbol
     for order in orders:
         # print(f"kill trade order: {order}")
@@ -254,20 +252,26 @@ def check_long_trades():
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
             # first make sure tp is set up
-            print("checking for exit")
+            # print("checking for exit")
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks are checking to see if the stops are in acceptable ranges for the amount of profit in trade. 
             # "Continue" lines are important for preventing stops from moving backwards
             check = check_for_exit(symbol)
             # if the exits don't exist, create them
             if check != True:
-                create_exit(symbol, entry_price, round(entry_price*.9, 2), round(exit_price, 2), qty)
+                create_exit(symbol, entry_price, round(entry_price*.90, 2), round(exit_price, 2), qty)
             # check current trades to see if it's time for an exit
-            kill_trade_or_not(symbol, current_price, qty, orders)
-            # kill trade if it drops 10% below entry
-            if percent_gain < -10:
+            killed_trade = kill_trade_or_not(symbol, current_price, qty, orders)
+            if killed_trade:
+                continue
+            else:
+                pass
+            # kill trade if it drops 7% below entry
+            if percent_gain < -7:
                 kill_trade(orders, symbol, qty)
-                # WORKING up to this point
+            # cash in winners
+            elif current_price >= exit_price:
+                kill_trade(orders, symbol, qty)
             # lock in free trades @ 5% gain
             elif percent_gain >= 5 and percent_gain < 10:
                 check_for_stop(symbol, entry_price, qty)
@@ -327,12 +331,38 @@ def rate_limiter(count):
         local_time = date.strftime("%X")
         cancel_all()
         print(f"Finish time: {local_time} on {local_date}")
-        # because script is started by local batch file, we want it to exit every day
+        # because script is started by local batch file, we want it to 
+        # exit every day, so it closes the cmd prompt
         sys.exit()
     # slow down time between calls to 5 sec    
     else:
         print("next check in 5...") 
         time.sleep(5) 
+
+def rebuild_monitor():
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+
+    # check if the monitor exists, and if it does, blank it out and start it over
+    try:
+        with open(location, 'w', newline='') as csvfile:
+            fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+        csvfile.close()
+    # if it doesn't exist, then don't worry about it
+    except:
+        pass
+
+def rescan_stocks():
+    # first, clear the monitor file, or else the rescan will 
+    # repeatedly enter and exit trades
+    rebuild_monitor()
+    # rescan, assess, and trade
+    subprocess.Popen(["python", "control.py", "--rescan"])
 
 def run_watchdog(count):
     # poor man's web socket
@@ -344,15 +374,9 @@ def run_watchdog(count):
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
-        # recheck the stocks in the first 15 minutes to make sure things haven't changed too drastically
-        # potential to mess up currently profitable trades
-        if count == 180:
-            # cancel open orders and then repeat the process
-            print("rescanning stocks.")
-            api.cancel_all_orders()
-            scraper()
-            assess('skip')
-            daily_trader()
+        # recheck stocks about every 20 min for the first hour
+        if count % 240 == 0 and count <= 480:
+            rescan_stocks()
 
 if __name__ == "__main__":
     # run_watchdog(0)

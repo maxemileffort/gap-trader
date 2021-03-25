@@ -1,6 +1,7 @@
 # scraper 
 
-import requests, re, datetime, time
+import requests, re, datetime, time, os
+import threading
 import lxml.html as lh
 from lxml.html.clean import Cleaner
 import pandas as pd
@@ -66,9 +67,6 @@ def get_gaps(url):
     # print([len(T) for T in th_elements[:12]])
     tr_elements = doc.xpath('//tr')
     # print([len(T) for T in tr_elements[:50]])
-
-    # print(th_elements)
-    # print(tr_elements)
 
     #Create empty list
     col=[]
