@@ -259,7 +259,7 @@ def check_long_trades():
             check = check_for_exit(symbol)
             # if the exits don't exist, create them
             if check != True:
-                create_exit(symbol, entry_price, round(entry_price*.90, 2), round(exit_price, 2), qty)
+                create_exit(symbol, entry_price, round(entry_price*.93, 2), round(exit_price, 2), qty)
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty, orders)
             if killed_trade:
@@ -272,9 +272,9 @@ def check_long_trades():
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(orders, symbol, qty)
-            # lock in free trades @ 5% gain
+            # lock in free trades @ 5% gain (actually added 1% because who wants to give away all those profits)
             elif percent_gain >= 5 and percent_gain < 10:
-                check_for_stop(symbol, entry_price, qty)
+                check_for_stop(symbol, entry_price*1.01, qty)
                 continue
             # lock in 10% gainers @ 5% gain
             elif percent_gain >= 10 and percent_gain < 15:
