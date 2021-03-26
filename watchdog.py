@@ -346,7 +346,7 @@ def rebuild_monitor():
     file_string = f"monitor-{local_date}.csv"
     location = f"./csv's/monitors/{file_string}"
 
-    # check if the monitor exists, and if it does, blank it out and start it over
+    # check if the monitor exists, and if it does, blank it out
     try:
         with open(location, 'w', newline='') as csvfile:
             fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
@@ -358,6 +358,7 @@ def rebuild_monitor():
         pass
 
 def rescan_stocks():
+    # Lost $3k on a paper account due to this. 3/26/21
     # first, clear the monitor file, or else the rescan will 
     # repeatedly enter and exit trades
     rebuild_monitor()
@@ -374,9 +375,6 @@ def run_watchdog(count):
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
-        # recheck stocks about every 20 min for the first hour
-        if count % 240 == 0 and count <= 480:
-            rescan_stocks()
 
 if __name__ == "__main__":
     # run_watchdog(0)
