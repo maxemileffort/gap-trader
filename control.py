@@ -21,13 +21,12 @@ def await_market_open():
     clock = api.get_clock()
     if clock.is_open == True:
         print("Market open, beginning process.")
-        scraper()
-        time.sleep(5)
-        assess('skip')
-        time.sleep(5)
-        daily_trader()
-        time.sleep(5)
-        run_watchdog(0)
+        scraper()           #
+        assess('skip')      #
+        time.sleep(1)       # This whole process (from scrape to starting watchdog) takes about 2-5 minutes
+        daily_trader()      #
+        time.sleep(1)       #
+        run_watchdog(0)     #
     else:
         print("market ain't open, sleeping til it does.")
         openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -116,12 +115,6 @@ def eval_choice(choice):
         await_market_open()
     elif choice == '9': # exit
         pass
-    elif choice == '66': # specifically for rescanning
-        scraper()
-        assess('skip')
-        daily_trader()
-        print("Orders created.")
-        sys.exit()
     else: # fat finger or something
         print('try again dummy.')
         present_selection()
@@ -132,8 +125,8 @@ full_cmd_arguments = sys.argv
 # Keep all but the first
 argument_list = full_cmd_arguments[1:]
 
-short_options = "1234567866"
-long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch", 'auto', 'rescan']
+short_options = "12345678"
+long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch", 'auto']
 
 try:
     arguments, values = getopt.getopt(argument_list, short_options, long_options)
@@ -160,8 +153,6 @@ for current_argument, current_value in arguments:
         eval_choice('7')
     elif current_argument in ("-8", "--auto"):
         eval_choice('8')
-    elif current_argument in ("-66", "--rescan"):
-        eval_choice('66')
     else:
         present_selection()
 

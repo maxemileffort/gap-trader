@@ -6,11 +6,17 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import alpaca_trade_api as tradeapi
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
+# find monitor file, or create it
+_date = datetime.datetime.now()
+local_date = _date.strftime("%x").replace("/", "_")
+file_string = f"monitor-{local_date}.csv"
+location = f"./csv's/monitors/{file_string}"
+print("Finding today's trades...")
 
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
+df = pd.read_csv(location)
+
+df.to_csv(location, index=False)
 
 # find report file
 _date = datetime.datetime.now()
@@ -30,10 +36,7 @@ def check_report(location):
 
 def analyze_trades(df):
     print("analyzing today's trades...")
-    orders = api.list_orders(status="all")
 
-    print(f"orders: {orders}")
-    print(f"df: {df}")
 
 # Reporter Logic
 

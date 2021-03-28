@@ -73,8 +73,8 @@ def move_stop(symbol, new_price, qty):
 
     # import csv as dataframe
     df = pd.read_csv(location)
-    print("move stop df:")
-    print(df)
+    # print("initial move stop df:")
+    # print(df)
 
     # rewrite dataframe with new stop
     # use df.loc to do this. video: https://www.youtube.com/watch?v=DCDe29sIKcE&list=RDCMUCCezIgC97PvUuR4_gbFUs5g&index=5
@@ -121,7 +121,7 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
             print("entry exists")
         else:
             # otherwise, append the entire row
-            row = [symbol, entry_price, stop_loss, take_profit, qty]
+            row = [symbol, entry_price, stop_loss, take_profit, qty, '']
             # print("row:")
             # print(row)
             df.loc[len(df.index)] = row
@@ -134,7 +134,7 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
         print("file not found, creating now.")
         Path(location).touch()
         with open(location, 'w', newline='') as csvfile:
-            fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
+            fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty', "actual_exit"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
         csvfile.close()
@@ -211,10 +211,27 @@ def check_for_stop(symbol, new_stop, qty):
             print("Problem finding stop.")
     csvfile.close()
 
+def record_trade(result):
+    print(result)
+    symbol = result.symbol
+    filled_price = result.filled_avg_price
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+
+    df = pd.read_csv(location)
+
+    filt = df['symbol'] == symbol
+    df.loc[filt, 'actual_exit'] = filled_price
+
+    df.to_csv(location, index=False)
+
 def kill_trade(symbol, qty):
     
     try:
-        api.submit_order(
+        res = api.submit_order(
             symbol= symbol,
             qty = qty,
             side= "sell",
@@ -222,6 +239,7 @@ def kill_trade(symbol, qty):
             time_in_force= "gtc"
         )
         print("Killed trade")
+        record_trade(res)
     except:
         print("something went wrong killing trade.")
         print("Unexpected error:", sys.exc_info())
