@@ -11,12 +11,14 @@ import pandas as pd
 _date = datetime.datetime.now()
 local_date = _date.strftime("%x").replace("/", "_")
 file_string = f"monitor-{local_date}.csv"
-location = f"./csv's/monitors/{file_string}"
+monitor_location = f"./csv's/monitors/{file_string}"
 print("Finding today's trades...")
+try:
+    df = pd.read_csv(monitor_location)
 
-df = pd.read_csv(location)
-
-df.to_csv(location, index=False)
+    df.to_csv(monitor_location, index=False)
+except:
+    print("No monitor.")
 
 # find report file
 _date = datetime.datetime.now()

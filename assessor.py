@@ -38,7 +38,7 @@ def assess(str):
     # analyze gap ups first
     # trade these, as they have something working favorably for them
     # which others will also bank on
-    # looking for gap up over 4%, volume over 200k, and last daily closing price under $10
+    # looking for gap up over 4%, volume over 300k, and last daily closing price under $20
     with open(recent_gap_up, newline='') as csvfile:
         stockreader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
         print("===== Gap Ups: =====")
@@ -50,7 +50,7 @@ def assess(str):
                 volume = int(float(row['Volume'].replace(",", "")))
                 gap_up_percent = float(row['Gap Up%'].replace("%", ""))
                 # check for criteria above
-                if volume>=300000 and last<=10.0 and gap_up_percent>=4.0:
+                if volume>=300000 and last<=20.0 and gap_up_percent>=4.0:
                     print(f"{symbol}: Last - {last}, Gap Up% - {gap_up_percent}, Volume - {volume}")
                     gap_ups.append([symbol, last, volume, gap_up_percent])
                 else:
@@ -85,7 +85,7 @@ def assess(str):
                 last = float(row['Last'])
                 volume = int(float(row['Volume'].replace(",", "")))
                 gap_down_percent = float(row['Gap Down%'].replace("%", ""))
-                if volume>=200000 and last<=10.0:
+                if volume>=300000 and last<=20.0:
                     print(f"{symbol}: Last - {last}, Gap Down% - {gap_down_percent}, Volume - {volume}")
                     gap_downs.append([symbol, last, volume, gap_down_percent])
                 else:

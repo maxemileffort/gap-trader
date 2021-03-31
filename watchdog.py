@@ -12,7 +12,7 @@ from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
+api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL)
 
 count = 0
 def start_test(count):
@@ -49,7 +49,7 @@ def kill_trade_or_not(symbol, current_price, qty):
     try:
         if float(current_price) <= float(stop_loss.iloc[0]):
             print("Kill trade.")
-            kill_trade(symbol, qty)
+            kill_trade(symbol, qty, current_price)
             return True
         else:
             print("Not kill trade.")
@@ -211,10 +211,10 @@ def check_for_stop(symbol, new_stop, qty):
             print("Problem finding stop.")
     csvfile.close()
 
-def record_trade(result):
+def record_trade(result, price):
     print(result)
     symbol = result.symbol
-    filled_price = result.filled_avg_price
+    # filled_price = result.filled_avg_price
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -224,11 +224,11 @@ def record_trade(result):
     df = pd.read_csv(location)
 
     filt = df['symbol'] == symbol
-    df.loc[filt, 'actual_exit'] = filled_price
+    df.loc[filt, 'actual_exit'] = price
 
     df.to_csv(location, index=False)
 
-def kill_trade(symbol, qty):
+def kill_trade(symbol, qty, price):
     
     try:
         res = api.submit_order(
@@ -239,7 +239,7 @@ def kill_trade(symbol, qty):
             time_in_force= "gtc"
         )
         print("Killed trade")
-        record_trade(res)
+        record_trade(res, price)
     except:
         print("something went wrong killing trade.")
         print("Unexpected error:", sys.exc_info())
@@ -273,10 +273,6 @@ def check_long_trades():
             exit_price = float(trade.avg_entry_price) * 2
             current_price = float(trade.current_price)
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
-            stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
-            distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
-            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
-            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks make sure stop loss is trailing. 
             # "Continue" lines are important for speeding up the process of checking stops for multiple stocks
@@ -284,6 +280,12 @@ def check_long_trades():
             # if the exits don't exist, create them
             if check != True:
                 create_exit(symbol, entry_price, round(entry_price*.93, 2), round(exit_price, 2), qty)
+
+            stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
+            distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
+            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
+            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
+
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty)
             if killed_trade:
@@ -291,17 +293,21 @@ def check_long_trades():
             else:
                 pass
             # kill trade if it drops 7% below entry
-            if percent_gain < -7:
-                kill_trade(symbol, qty)
+            if percent_gain <= -7:
+                kill_trade(symbol, qty, current_price)
             # cash in winners
             elif current_price >= exit_price:
-                kill_trade(symbol, qty)
+                kill_trade(symbol, qty, current_price)
             # lock in free trades @ 5% gain (actually added 1% because who wants to give away ALL those profits)
-            elif percent_gain >= 5 and percent_gain < 10:
-                check_for_stop(symbol, entry_price*1.01, qty)
-                continue
+            # elif percent_gain >= 5 and percent_gain < 10:
+            #     check_for_stop(symbol, entry_price*1.01, qty)
+            #     continue
+            # # start a trailing stop of 7%
+            # elif percent_gain >= 10 and distance_from_stoploss > 7:
+            #     check_for_stop(symbol, round(current_price*0.93,2), qty)
+            #     continue
             # start a trailing stop of 7%
-            elif percent_gain >= 10 and distance_from_stoploss > 7:
+            elif distance_from_stoploss > 7:
                 check_for_stop(symbol, round(current_price*0.93,2), qty)
                 continue
             # # lock in 15% gainers @ 10% gain
@@ -338,7 +344,7 @@ def rate_limiter(count):
     print(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
-    slow_down = count % 200 # clock calls were ending the script prematurely so slowed them down
+    slow_down = count % 135 # clock calls were ending the script prematurely so slowed them down
     if slow_down == 0:
         clock = api.get_clock()
         closingTime = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()

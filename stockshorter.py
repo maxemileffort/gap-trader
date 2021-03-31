@@ -9,7 +9,7 @@ import alpaca_trade_api as tradeapi
 
 from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
 
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
+api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL)
 
 # get latest csv from watches directory
 list_of_files = glob.glob("./csv's/watches/*.csv") 
