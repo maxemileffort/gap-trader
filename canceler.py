@@ -1,44 +1,76 @@
 # canceler 
+import sys
+import json
+import tda.orders.equities as equities
 
-import alpaca_trade_api as tradeapi
-
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
-
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_PAPER_BASE_URL)
+from client_builder import build_client
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def cancel_all():
+    errors = []
+    client = build_client()
     # cancel all open orders
-    orders = api.list_orders(status="open")
-    print("Canceling orders...")
+    try:
+        orders = client.get_orders_by_path(account_id=ACCOUNT_ID, max_results=None, from_entered_datetime=None, to_entered_datetime=None, status=client.Order.Status.QUEUED, statuses=None).json()
+        print("Canceling orders...")
+        # orders = orders.json()
+        for order in orders:
+            order_id = order["orderId"]
+            print(f"Order ID: {order_id}")
+            client.cancel_order(order_id=order_id, account_id=ACCOUNT_ID)
 
-    for order in orders:
-        api.cancel_order(order.id)
+        print("Orders canceled.")
+    except:
+        print("Unexpected error canceling orders:", sys.exc_info())
+        errors.append(sys.exc_info())
+        pass
 
-    print("Orders canceled.")
-
-    # close all trades    
-    positions = api.list_positions()
-    print("Closing positions...")
-    for trade in positions:
-        # submit sell order for the position
+    # close all trades   
+    try:
+        account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()
         try:
-            api.submit_order(
-                symbol=trade.symbol,
-                qty=trade.qty,
-                side='sell',
-                type='market',
-                time_in_force='gtc'
-            )
-        # it might be a short position, so try a buy order
+            positions = account_with_positions["positions"]
         except:
-            api.submit_order(
-                symbol=trade.symbol,
-                qty=trade.qty,
-                side='buy',
-                type='market',
-                time_in_force='gtc'
-            )
-    print("All positions closed.")
+            positions = {}
+        print("Closing positions...")
+        if positions == {}:
+            print("No positions to close.")
+        else:
+            for trade in positions:
+                print(positions)
+                # submit sell order for the position
+                symbol = trade["instrument"]["symbol"]
+                short_quantity = trade["shortQuantity"]
+                long_quantity = trade["longQuantity"]
+                try:
+                    if long_quantity > 0:
+                        client.place_order(
+                            account_id=ACCOUNT_ID,
+                            order_spec=equities.equity_sell_market(symbol, long_quantity)
+                        )
+                # it might be a short position, so try a buy order
+                    elif short_quantity > 0:
+                        client.place_order(
+                            account_id=ACCOUNT_ID,
+                            order_spec=equities.equity_buy_market(symbol, short_quantity)
+                        )
+                    else:
+                        print("No trades to close.")
+                        return
+                except:
+                    print("Unexpected error closing trades:", sys.exc_info())
+                    errors.append(sys.exc_info())
+                    pass
+    except:
+        print("Unexpected error closing trades:", sys.exc_info())
+        errors.append(sys.exc_info())
+        pass
+
+    if len(errors) > 0:
+        print("errors with closing orders and positions:")
+        print(errors)
+    else:
+        print("All positions closed.")
 
 if __name__ == "__main__":
     cancel_all()
