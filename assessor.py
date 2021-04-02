@@ -50,7 +50,7 @@ def assess(str):
                 volume = int(float(row['Volume'].replace(",", "")))
                 gap_up_percent = float(row['Gap Up%'].replace("%", ""))
                 # check for criteria above
-                if volume>=300000 and last<=20.0 and gap_up_percent>=4.0:
+                if volume>=300000 and last<=5.0 and gap_up_percent>=4.0:
                     print(f"{symbol}: Last - {last}, Gap Up% - {gap_up_percent}, Volume - {volume}")
                     gap_ups.append([symbol, last, volume, gap_up_percent])
                 else:
