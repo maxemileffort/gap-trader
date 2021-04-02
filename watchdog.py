@@ -4,11 +4,10 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import alpaca_trade_api as tradeapi
 from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
 from tda.orders.common import OrderType
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL, CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 from canceler import cancel_all
 from scraper import scraper
 from trader import daily_trader
@@ -218,10 +217,7 @@ def check_for_stop(symbol, new_stop, qty):
             print("Problem finding stop.")
     csvfile.close()
 
-def record_trade(result, price):
-    print(result)
-    symbol = result.symbol
-    # filled_price = result.filled_avg_price
+def record_trade(symbol, price):
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -236,14 +232,14 @@ def record_trade(result, price):
     df.to_csv(location, index=False)
 
 def kill_trade(symbol, qty, price):
-    
+    client = build_client()
     try:
         client.place_order(
                 account_id=ACCOUNT_ID, 
                 order_spec=equity_sell_market(symbol, qty)
             )
         print("Killed trade")
-        record_trade(res, price)
+        record_trade(symbol, price)
     except:
         print("something went wrong killing trade.")
         print("Unexpected error:", sys.exc_info())
@@ -278,9 +274,11 @@ def check_long_trades():
         if trade.side == "long":
             symbol = trade["instrument"]["symbol"]
             qty = trade["longQuantity"]
-            entry_price = float(trade.avg_entry_price)
-            exit_price = float(trade.avg_entry_price) * 2
-            current_price = float(trade.current_price)
+            entry_price = float(trade["averagePrice"])
+            exit_price = float(entry_price) * 2
+            current_bid_price = round(float(client.get_quote(symbol).json()["bidPrice"]),2)
+            current_ask_price = round(float(client.get_quote(symbol).json()["askPrice"]),2)
+            current_price = (current_ask_price + current_bid_price) / 2
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks make sure stop loss is trailing. 

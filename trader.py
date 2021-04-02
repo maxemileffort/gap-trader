@@ -29,14 +29,18 @@ def daily_trader():
     account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
     
     print(f"account: {account}")
-    # choose between account["currentBalances"][totalCash] for cash accounts, or account["currentBalances"]["buyingPower"]
+    # choose between account["currentBalances"][totalCash] for cash accounts, 
+    # or account["currentBalances"]["buyingPower"]
     if account["type"] == "CASH":
+        # plan to use a cash account to avoid PDT rule, so need to spread the 
+        # trades over 3 days to allow cash to settle. Also, using this 
+        # number to automatically calculate qty of shares for each trade
         buying_power = account["currentBalances"]["totalCash"]
     else:
+        # later, when using a margin account, this becomes 
+        # a part of the risk management strategy
         buying_power = account["currentBalances"]["buyingPower"]
-    # plan to use a cash account to avoid PDT rule, so need to spread the 
-    # trades over 3 days to allow cash to settle. Also, using this 
-    # number to automatically calculate qty of shares for each trade
+    
     daily_investment = round(float(buying_power) / 3, 2)
     print(daily_investment)
     
@@ -68,17 +72,14 @@ def daily_trader():
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
-            sl_price = str(round(entry_price * 0.9, 2))
-            # sl_limit_price = str(round(last * 0.92 - 0.01, 2))
-            # tp_limit_price = str(round(last * 2, 2))
-            # print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            sl_price = str(round(entry_price * 0.93, 2))
             print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
             
             try:
                 # simple order
                 client.place_order(
                    account_id=ACCOUNT_ID,
-                   order_spec=equity_buy_limit(symbol, qty, entry).set_order_type(OrderType.STOP)
+                   order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP)
                 )
                 order_num+=1
             except:

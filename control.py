@@ -5,7 +5,6 @@ from trader import daily_trader
 from assessor import assess
 from watchdog import run_watchdog
 
-import alpaca_trade_api as tradeapi
 import tda
 from client_builder import build_client
 
