@@ -6,7 +6,7 @@ import os
 import sys
 
 from tda.orders.equities import equity_buy_limit
-from tda.orders.common import Duration, Session, OrderType
+from tda.orders.common import OrderType
 
 from client_builder import build_client
 from canceler import cancel_all

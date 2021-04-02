@@ -5,29 +5,36 @@ from pathlib import Path
 
 import pandas as pd
 import alpaca_trade_api as tradeapi
+from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
+from tda.orders.common import OrderType
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
+from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL, CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 from canceler import cancel_all
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
-
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL)
+from client_builder import build_client
 
 count = 0
 def start_test(count):
     cancel_all()
+    client = build_client()
     if count < 1:
         count+=1
-        symbols = ['AAPL', 'MSFT', 'HLX', 'AES', 'NI', 'CNP', 'BOXL', 'IBIO']
+        symbols = ['CRBP', 'QD', 'WPG', 'ANY']
 
         for symbol in symbols:
-            api.submit_order(
-                symbol=symbol,
-                qty='100',
-                side='buy',
-                type='market',
-                time_in_force='gtc'
+            client.place_order(
+                account_id=ACCOUNT_ID, 
+                order_spec=equity_buy_market(symbol, 5)
+            )
+
+        time.sleep(60)
+
+        for symbol in symbols:
+            client.place_order(
+                account_id=ACCOUNT_ID, 
+                order_spec=equity_sell_market(symbol, 5)
             )
     run_watchdog(0)
 
@@ -231,13 +238,10 @@ def record_trade(result, price):
 def kill_trade(symbol, qty, price):
     
     try:
-        res = api.submit_order(
-            symbol= symbol,
-            qty = qty,
-            side= "sell",
-            type= "market",
-            time_in_force= "gtc"
-        )
+        client.place_order(
+                account_id=ACCOUNT_ID, 
+                order_spec=equity_sell_market(symbol, qty)
+            )
         print("Killed trade")
         record_trade(res, price)
     except:
@@ -261,14 +265,19 @@ def grab_current_stoploss(symbol):
     return float(sl)
 
 def check_long_trades():
-    positions = api.list_positions()
+    client = build_client()
+    account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()["securitiesAccount"]
+    try:
+        positions = account_with_positions["positions"]
+    except:
+        positions = {}
     # print(orders)
     for trade in positions:
         # print("trade:")
         # print(trade)
         if trade.side == "long":
-            symbol = trade.symbol
-            qty = trade.qty
+            symbol = trade["instrument"]["symbol"]
+            qty = trade["longQuantity"]
             entry_price = float(trade.avg_entry_price)
             exit_price = float(trade.avg_entry_price) * 2
             current_price = float(trade.current_price)
@@ -298,42 +307,10 @@ def check_long_trades():
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price)
-            # lock in free trades @ 5% gain (actually added 1% because who wants to give away ALL those profits)
-            # elif percent_gain >= 5 and percent_gain < 10:
-            #     check_for_stop(symbol, entry_price*1.01, qty)
-            #     continue
-            # # start a trailing stop of 7%
-            # elif percent_gain >= 10 and distance_from_stoploss > 7:
-            #     check_for_stop(symbol, round(current_price*0.93,2), qty)
-            #     continue
             # start a trailing stop of 7%
             elif distance_from_stoploss > 7:
                 check_for_stop(symbol, round(current_price*0.93,2), qty)
                 continue
-            # # lock in 15% gainers @ 10% gain
-            # elif percent_gain >= 15 and percent_gain < 20:
-            #     check_for_stop(symbol, round(entry_price*1.10,2), qty)
-            #     continue
-            # # lock in 20% gainers @ 15% gain
-            # elif percent_gain >= 20 and percent_gain < 25:
-            #     check_for_stop(symbol, round(entry_price*1.15,2), qty)
-            #     continue
-            # # and so on...
-            # elif percent_gain >= 25 and percent_gain < 30:
-            #     check_for_stop(symbol, round(entry_price*1.20,2), qty)
-            #     continue
-            # elif percent_gain >= 30 and percent_gain < 35:
-            #     check_for_stop(symbol, round(entry_price*1.25,2), qty)
-            #     continue
-            # elif percent_gain >= 35 and percent_gain < 40:
-            #     check_for_stop(symbol, round(entry_price*1.30,2), qty)
-            #     continue
-            # elif percent_gain >= 40 and percent_gain < 45:
-            #     check_for_stop(symbol, round(entry_price*1.35,2), qty)
-            #     continue
-            # elif percent_gain >= 45 and percent_gain < 50:
-            #     check_for_stop(symbol, round(entry_price*1.40,2), qty)
-            #     continue
             # log that there isn't enough profit to move stop
             else:
                 print(f"not enough gain to move stops for {symbol}.")
@@ -344,11 +321,10 @@ def rate_limiter(count):
     print(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
-    slow_down = count % 135 # clock calls were ending the script prematurely so slowed them down
+    slow_down = count % 240 # clock calls were ending the script prematurely so slowed them down
     if slow_down == 0:
-        clock = api.get_clock()
-        closingTime = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()
-        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+        closingTime = time.mktime(datetime.datetime.now().replace(hour=15, minute=0, second=0, microsecond=0).timetuple())
+        currTime = time.mktime(datetime.datetime.now().timetuple())
         timeToClose = closingTime - currTime
     else:
         timeToClose = 1200
