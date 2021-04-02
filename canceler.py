@@ -27,7 +27,7 @@ def cancel_all():
 
     # close all trades   
     try:
-        account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()
+        account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()["securitiesAccount"]
         try:
             positions = account_with_positions["positions"]
         except:
@@ -70,7 +70,7 @@ def cancel_all():
         print("errors with closing orders and positions:")
         print(errors)
     else:
-        print("All positions closed.")
+        print("All orders canceled and positions closed.")
 
 if __name__ == "__main__":
     cancel_all()
