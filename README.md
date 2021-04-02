@@ -24,8 +24,9 @@ run
 create a `.env` file and add your api key and secret key:
 
 ```
-APCA_API_KEY_ID = <your key>
-APCA_API_SECRET_KEY = <your secret key>
-APCA_API_BASE_URL = https://api.alpaca.markets 
-APCA_API_PAPER_BASE_URL = https://paper-api.alpaca.markets 
+CHROMEDRIVER_DIR=<path to chromedriver>
+CHROME_DIR=<path to chrome>
+CALLBACK_URL=<exactly what is on your app that you created>
+CONSUMER_KEY=<your consumer key>
+ACCOUNT_ID=<your numerical account number>
 ```

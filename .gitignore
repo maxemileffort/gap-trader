@@ -1,6 +1,8 @@
 *.env
 *.csv
 
+/tokens
+
 scratch.py
 
 __pycache__
