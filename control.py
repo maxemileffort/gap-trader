@@ -6,43 +6,39 @@ from assessor import assess
 from watchdog import run_watchdog
 
 import alpaca_trade_api as tradeapi
+import tda
+from client_builder import build_client
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
-
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL)
+from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL, CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
                 ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 
                 ' 6. Scrape, Assess, and Trade\n 7. Start Watchdog\n 8. All 4\n 9. Exit\n Pick a number.')
 
 # automate starting entire script
-def await_market_open():
+def await_market_open(num):
+    num += 1
+    if num > 4:
+        print("market not opening today")
+        return
     print("checking time...")
-    clock = api.get_clock()
-    if clock.is_open == True:
+    client = build_client()
+    today = datetime.date.today()
+    clock = client.get_hours_for_single_market(market=client.Markets.EQUITY, date=today).json()["equity"]["equity"]
+    
+    # start app right at 9:30 est from scheduler
+    if clock["isOpen"] == True:
         print("Market open, beginning process.")
         scraper()           #
         assess('skip')      #
         time.sleep(1)       # This whole process (from scrape to starting watchdog) takes about 2-5 minutes
-        daily_trader()      #
-        time.sleep(1)       #
+        daily_trader()      # so there's inherently a delay between market open and when the app 
+        time.sleep(1)       # starts trading
         run_watchdog(0)     #
     else:
         print("market ain't open, sleeping til it does.")
-        openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
-        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
-        timeToOpen = int((openingTime - currTime) / 60)
-        print(str(timeToOpen) + " minutes til market open.")
-        if timeToOpen > 250:
-            # if it's more than 4 hours, it's probably a weekend, so just terminate
-            # and let batch file start the script the next day
-            print("Try again tomorrow.")
-            sys.exit()
-        elif timeToOpen > 10:
-            time.sleep(60*timeToOpen/2)    
-        else:
-            time.sleep(60)    
-        await_market_open()
+        time.sleep(60)    
+        await_market_open(num)
 
 def present_selection():
     print(option_string)
@@ -112,7 +108,7 @@ def eval_choice(choice):
         time.sleep(1)
         run_watchdog(0)
     elif choice == '8': # runs all 3 after waiting for market to open, then begins watchdog
-        await_market_open()
+        await_market_open(0)
     elif choice == '9': # exit
         pass
     else: # fat finger or something

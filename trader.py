@@ -3,49 +3,43 @@
 import csv
 import glob
 import os
+import sys
 
-import alpaca_trade_api as tradeapi
+from tda.orders.equities import equity_buy_limit
+from tda.orders.common import Duration, Session, OrderType
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
+from client_builder import build_client
+from canceler import cancel_all
+
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def daily_trader():
     list_of_files = glob.glob("./csv's/trades/*.csv") 
     sorted_files = sorted(list_of_files, key=os.path.getctime)
     most_recent_file = sorted_files[-1] # last file should be most recent one
 
-    api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL) 
+    client = build_client()
 
     # cancel all open orders
-    print("Canceling orders...")
-    api.cancel_all_orders()
-    print("Orders canceled.")
+    cancel_all()
 
-    # close all profitable trades    
-    positions = api.list_positions()
-    print("Closing profitable positions...")
-    for trade in positions:
-        pl = float(trade.unrealized_pl)
-        if pl > 0.0:
-            # submit sell order for the position
-            api.submit_order(
-                symbol=trade.symbol,
-                qty=trade.qty,
-                side='sell',
-                type='market',
-                time_in_force='gtc'
-            )
-    print("Profitable positions closed.")
-
+    # close all profitable trades 
     print("Getting account balance...")
-    account = api.get_account()
-    # print(f"account: {account}")
-    # choose between account.equity, .buying_power, or .last_equity for deciding daily_investment
-    buying_power = account.buying_power
+    # SUBSTITUTE
+    account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
+    
+    print(f"account: {account}")
+    # choose between account["currentBalances"][totalCash] for cash accounts, or account["currentBalances"]["buyingPower"]
+    if account["type"] == "CASH":
+        buying_power = account["currentBalances"]["totalCash"]
+    else:
+        buying_power = account["currentBalances"]["buyingPower"]
     # plan to use a cash account to avoid PDT rule, so need to spread the 
     # trades over 3 days to allow cash to settle. Also, using this 
     # number to automatically calculate qty of shares for each trade
     daily_investment = round(float(buying_power) / 3, 2)
     print(daily_investment)
+    
 
     # count rows
     with open(most_recent_file, newline='') as csvfile:
@@ -79,17 +73,12 @@ def daily_trader():
             # tp_limit_price = str(round(last * 2, 2))
             # print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} tp_limit price: {tp_limit_price} Vol: {volume} Gap Up% {gap_up_percent}")
             print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
-
+            
             try:
                 # simple order
-                api.submit_order(
-                    symbol=symbol,
-                    qty=str(qty),
-                    side='buy',
-                    type='stop',
-                    stop_price=str(entry_price),
-                    time_in_force='gtc',
-                    order_class='simple'
+                client.place_order(
+                   account_id=ACCOUNT_ID,
+                   order_spec=equity_buy_limit(symbol, qty, entry).set_order_type(OrderType.STOP)
                 )
                 order_num+=1
             except:
