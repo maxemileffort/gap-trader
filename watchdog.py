@@ -28,7 +28,7 @@ def start_test(count):
                 order_spec=equity_buy_market(symbol, 5)
             )
 
-        time.sleep(60)
+        time.sleep(10)
 
         for symbol in symbols:
             client.place_order(
@@ -271,13 +271,14 @@ def check_long_trades():
     for trade in positions:
         # print("trade:")
         # print(trade)
-        if trade.side == "long":
+        if trade["longQuantity"] > 0:
             symbol = trade["instrument"]["symbol"]
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 2
-            current_bid_price = round(float(client.get_quote(symbol).json()["bidPrice"]),2)
-            current_ask_price = round(float(client.get_quote(symbol).json()["askPrice"]),2)
+            # print(f"test: {test}")
+            current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
+            current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
@@ -291,7 +292,7 @@ def check_long_trades():
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
             print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
-            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade.unrealized_pl}')
+            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty)

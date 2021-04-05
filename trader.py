@@ -79,7 +79,7 @@ def daily_trader():
                 # simple order
                 client.place_order(
                    account_id=ACCOUNT_ID,
-                   order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP)
+                   order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
                 )
                 order_num+=1
             except:
