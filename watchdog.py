@@ -58,7 +58,7 @@ def kill_trade_or_not(symbol, current_price, qty):
             kill_trade(symbol, qty, current_price)
             return True
         else:
-            print("Not kill trade.")
+            print("Not killing trade.")
             print("Current price still above stop_loss")
             return False
     except:
@@ -87,8 +87,7 @@ def move_stop(symbol, new_price, qty):
     try:
         filt = df['symbol'] == symbol
         df.loc[filt, 'stop_loss'] = new_price
-        print("new move stop df:")
-        print(df)
+        print(f"new stop loss for {symbol}: {new_price}")
     except:
         print("Unexpected error moving stop:", sys.exc_info())
         print("unchanged move stop df:")
@@ -320,7 +319,7 @@ def rate_limiter(count):
     print(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
-    slow_down = count % 240 # clock calls were ending the script prematurely so slowed them down
+    slow_down = count % 120 # clock calls were ending the script prematurely so slowed them down
     if slow_down == 0:
         closingTime = time.mktime(datetime.datetime.now().replace(hour=15, minute=0, second=0, microsecond=0).timetuple())
         currTime = time.mktime(datetime.datetime.now().timetuple())
