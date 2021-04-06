@@ -5,3 +5,4 @@ tda-api
 requests
 lxml
 dotenv
+splinter
