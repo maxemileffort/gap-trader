@@ -18,13 +18,9 @@ try:
 
     df.to_csv(monitor_location, index=False)
 except:
-    print("No monitor.")
-
-# find report file
-_date = datetime.datetime.now()
-local_date = _date.strftime("%x").replace("/", "_")
-file_string = f"report-{local_date}.csv"
-location = f"./csv's/reports/{file_string}"
+    print("No monitor. No trades today.")
+    df = ""
+    sys.exit()
 
 def check_report(location):
     try:
@@ -38,7 +34,6 @@ def check_report(location):
 
 def analyze_trades(df):
     print("analyzing today's trades...")
-
 
 # Reporter Logic
 

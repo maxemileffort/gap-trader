@@ -1,11 +1,16 @@
 # assessor 
 
 import re, datetime, time, csv
-import pandas as pd
-from sites import urls
-from scraper import scraper
 import glob
 import os
+
+import pandas as pd
+
+from sites import urls
+from scraper import scraper
+from client_builder import build_client
+
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def get_date_and_time(str):
     date = datetime.datetime.now()
@@ -34,7 +39,27 @@ def assess(str):
 
     gap_ups = []
     gap_downs = []
-
+    client = build_client()
+    account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
+    # choose between account["currentBalances"][totalCash] for cash accounts, 
+    # or account["currentBalances"]["buyingPower"]
+    if account["type"] == "CASH":
+        # plan to use a cash account to avoid PDT rule, so need to spread the 
+        # trades over 3 days to allow cash to settle. Also, using this 
+        # number to automatically calculate qty of shares for each trade
+        buying_power = account["currentBalances"]["totalCash"]
+    else:
+        # later, when using a margin account, this becomes 
+        # a part of the risk management strategy
+        buying_power = account["currentBalances"]["buyingPower"]
+    
+    if buying_power < 500:
+        bottom_limit = 0.0
+        upper_limit = 10.0
+    else:
+        bottom_limit = 3.0
+        upper_limit = 17.0
+        
     # analyze gap ups first
     # trade these, as they have something working favorably for them
     # which others will also bank on
@@ -50,7 +75,7 @@ def assess(str):
                 volume = int(float(row['Volume'].replace(",", "")))
                 gap_up_percent = float(row['Gap Up%'].replace("%", ""))
                 # check for criteria above
-                if volume>=300000 and last<=5.0 and gap_up_percent>=4.0:
+                if volume>=300000 and last >= bottom_limit and last <= upper_limit and gap_up_percent>=4.0:
                     print(f"{symbol}: Last - {last}, Gap Up% - {gap_up_percent}, Volume - {volume}")
                     gap_ups.append([symbol, last, volume, gap_up_percent])
                 else:

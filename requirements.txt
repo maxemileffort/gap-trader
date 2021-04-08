@@ -4,5 +4,6 @@ scipy >= 1.6.0
 tda-api
 requests
 lxml
-dotenv
+python-dotenv
 splinter
+alpha_vantage

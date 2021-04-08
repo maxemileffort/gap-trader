@@ -8,7 +8,7 @@ from watchdog import run_watchdog
 import tda
 from client_builder import build_client
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL, CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data Only\n' 
                 ' 2. Assess Data Only\n 3. Trade Only\n 4. Scrape and Assess\n 5. Assess and Trade\n' 

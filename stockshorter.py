@@ -1,15 +1,22 @@
 # shorter
 
-import re, datetime, time, csv
+import datetime, time, csv, threading, sys, subprocess
 import glob
 import os
+from pathlib import Path
+
+import pandas as pd
+from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
+from tda.orders.common import OrderType
 
 import requests
-import alpaca_trade_api as tradeapi
 
-from settings import APCA_API_KEY_ID, APCA_API_SECRET_KEY, APCA_API_PAPER_BASE_URL, APCA_API_BASE_URL
-
-api = tradeapi.REST(APCA_API_KEY_ID, APCA_API_SECRET_KEY, base_url=APCA_API_BASE_URL)
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
+from canceler import cancel_all
+from scraper import scraper
+from trader import daily_trader
+from assessor import assess
+from client_builder import build_client
 
 # get latest csv from watches directory
 list_of_files = glob.glob("./csv's/watches/*.csv") 
