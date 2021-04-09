@@ -54,7 +54,7 @@ def assess(str):
         buying_power = account["currentBalances"]["buyingPower"]
     
     if buying_power < 500:
-        bottom_limit = 0.0
+        bottom_limit = 0.01
         upper_limit = 10.0
     else:
         bottom_limit = 3.0

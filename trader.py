@@ -69,6 +69,8 @@ def daily_trader():
             last = float(row['Last'])
             entry_price = round(last + 0.30, 2)
             qty = int(round(investment_per_trade / entry_price, 0))
+            if entry_price == 0 or qty == 0:
+                continue
             print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
