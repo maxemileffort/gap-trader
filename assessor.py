@@ -53,7 +53,7 @@ def assess(str):
         # a part of the risk management strategy
         buying_power = account["currentBalances"]["buyingPower"]
     
-    if buying_power < 500:
+    if buying_power < 250:
         bottom_limit = 0.01
         upper_limit = 10.0
     else:
@@ -110,7 +110,7 @@ def assess(str):
                 last = float(row['Last'])
                 volume = int(float(row['Volume'].replace(",", "")))
                 gap_down_percent = float(row['Gap Down%'].replace("%", ""))
-                if volume>=300000 and last<=20.0:
+                if volume>=300000 and last >= bottom_limit and last <= upper_limit and gap_down_percent < -4.5:
                     print(f"{symbol}: Last - {last}, Gap Down% - {gap_down_percent}, Volume - {volume}")
                     gap_downs.append([symbol, last, volume, gap_down_percent])
                 else:

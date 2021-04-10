@@ -28,7 +28,8 @@ def await_market_open(num):
     
     # start app right at 9:30 est from scheduler
     if clock["isOpen"] == True:
-        print("Market open, beginning process.")
+        print("Market open, sleeping for 5 min then beginning process.")
+        time.sleep(60*5)
         scraper()           #
         assess('skip')      #
         time.sleep(1)       # This whole process (from scrape to starting watchdog) takes about 2-5 minutes
@@ -49,9 +50,6 @@ def eval_choice(choice):
     if choice == '1': # scrape only
         print("working...")
         scraper()
-        time.sleep(10)
-        print("almost done...")
-        time.sleep(10)
         print("done scraping.")
         present_selection()
     elif choice == '2': # assess only
@@ -110,7 +108,7 @@ def eval_choice(choice):
     elif choice == '8': # runs all 3 after waiting for market to open, then begins watchdog
         await_market_open(0)
     elif choice == '9': # exit
-        pass
+        sys.exit()
     else: # fat finger or something
         print('try again dummy.')
         present_selection()

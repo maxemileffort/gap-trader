@@ -13,17 +13,6 @@ from random import seed, random, choice
 from sites import urls
 from settings import CHROMEDRIVER_DIR
 
-def useragent_generator():
-    ua_list = [ # needs to have more options
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:77.0) Gecko/20100101 Firefox/77.0',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-    ]
-    ua = choice(ua_list)
-    return ua
-
 def get_gaps(url):
     date = datetime.datetime.now()
     local_date = date.strftime("%x").replace("/", "_")
@@ -59,12 +48,17 @@ def get_gaps(url):
     except:
         # print("Error occurred triggering lazy loading: ", sys.exc_info())
         pass
-    time.sleep(random()+1)
-    try:
-        browser.find_by_css('.show-all')[1].click()
-    except:
-        print("element doesn't exist.")
-        pass
+    
+    retries = 0
+    while retries < 5:
+        try:
+            browser.find_by_css('.show-all')[1].click()
+            break
+        except:
+            print("element doesn't exist.")
+            time.sleep(5)
+            retries += 1
+            pass
 
     # add a little randomness to using the page
     time.sleep(random()+random()*10+5)
