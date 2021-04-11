@@ -7,3 +7,4 @@ lxml
 python-dotenv
 splinter
 alpha_vantage
+bs4
