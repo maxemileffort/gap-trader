@@ -37,7 +37,7 @@ def start_test(count):
             )
     run_watchdog(0)
 
-def kill_trade_or_not(symbol, current_price, qty):
+def kill_trade_or_not(symbol, current_price, qty, order_type):
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -53,13 +53,17 @@ def kill_trade_or_not(symbol, current_price, qty):
     # print(stop_loss.iloc[0])
     # if current_price is below stop, cancel orders and sell off position
     try:
-        if float(current_price) <= float(stop_loss.iloc[0]):
+        if order_type == "long" and float(current_price) <= float(stop_loss.iloc[0]):
             print("Kill trade.")
-            kill_trade(symbol, qty, current_price)
+            kill_trade(symbol, qty, current_price, order_type)
+            return True
+        elif order_type == "short" and float(current_price) >= float(stop_loss.iloc[0]):
+            print("Kill trade.")
+            kill_trade(symbol, qty, current_price, order_type)
             return True
         else:
             print("Not killing trade.")
-            print("Current price still above stop_loss")
+            print("Current price still away from stop_loss")
             return False
     except:
         print("Unexpected error checking stops:", sys.exc_info())
@@ -235,15 +239,23 @@ def record_trade(symbol, price):
 
     df.to_csv(location, index=False)
 
-def kill_trade(symbol, qty, price):
+def kill_trade(symbol, qty, price, order_type):
     client = build_client()
     try:
-        client.place_order(
-                account_id=ACCOUNT_ID, 
-                order_spec=equity_sell_market(symbol, qty)
-            )
-        print("Killed trade")
-        record_trade(symbol, price)
+        if order_type == "long":
+            client.place_order(
+                    account_id=ACCOUNT_ID, 
+                    order_spec=equity_sell_market(symbol, qty)
+                )
+            print("Killed trade")
+            record_trade(symbol, price)
+        else:
+            client.place_order(
+                    account_id=ACCOUNT_ID, 
+                    order_spec=equity_buy_market(symbol, qty)
+                )
+            print("Killed trade")
+            record_trade(symbol, price)
     except:
         print("something went wrong killing trade.")
         print("Unexpected error:", sys.exc_info())
@@ -299,17 +311,17 @@ def check_long_trades(client):
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
-            killed_trade = kill_trade_or_not(symbol, current_price, qty)
+            killed_trade = kill_trade_or_not(symbol, current_price, qty, 'long')
             if killed_trade:
                 continue # skip the rest of the checks
             else:
                 pass
             # kill trade if it drops 7% below entry
             if percent_gain <= -7:
-                kill_trade(symbol, qty, current_price)
+                kill_trade(symbol, qty, current_price, "long")
             # cash in winners
             elif current_price >= exit_price:
-                kill_trade(symbol, qty, current_price)
+                kill_trade(symbol, qty, current_price, "long")
             # start a trailing stop of 7%
             elif distance_from_stoploss > 7:
                 check_for_stop(symbol=symbol, new_stop=round(current_price*0.93,2), qty=qty, order_type="long")
@@ -353,17 +365,17 @@ def check_short_trades(client):
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
-            killed_trade = kill_trade_or_not(symbol, current_price, qty)
+            killed_trade = kill_trade_or_not(symbol, current_price, qty, "short")
             if killed_trade:
                 continue # skip the rest of the checks
             else:
                 pass
              # kill trade if it drops 7% below entry
             if percent_gain <= -7:
-                kill_trade(symbol, qty, current_price)
+                kill_trade(symbol, qty, current_price, "short")
             # cash in winners
             elif current_price >= exit_price:
-                kill_trade(symbol, qty, current_price)
+                kill_trade(symbol, qty, current_price, "short")
             # start a trailing stop of 7%
             elif distance_from_stoploss > 7:
                 check_for_stop(symbol=symbol, new_stop=round(current_price*1.07,2), qty=qty, order_type="short")
