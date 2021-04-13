@@ -86,18 +86,21 @@ def daily_trader():
             bid = quote.json()[symbol]["bidPrice"]
             ask = quote.json()[symbol]["askPrice"]
             avg_price = round((bid + ask) / 2, 2)
-            qty = int(round(investment_per_trade / entry_price, 0))
-            print(f"qty is {qty}")
+            print(avg_price)
+            print(last)
+            
             # if the price has moved down more than 50 cents, avg + 0.5 will be lower than last, and try to short the stock
             if avg_price + 0.5 < last: 
                 order_type = "short"
                 entry_price = round(last - 0.60, 2)
                 sl_price = str(round(entry_price * 1.07, 2))
             # if the price is moving up, then go long with it
-            elif avg_price >= last: 
+            else: 
                 order_type = "long"
-                sl_price = str(round(entry_price * 0.93, 2))
                 entry_price = round(last + 0.30, 2)
+                sl_price = str(round(entry_price * 0.93, 2))
+            qty = int(round(investment_per_trade / entry_price, 0))
+            print(f"qty is {qty}")
             if entry_price == 0 or qty == 0:
                 continue
             volume = row['Volume'] # to be used later
