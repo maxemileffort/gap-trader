@@ -289,6 +289,8 @@ def check_long_trades(client):
         # print(trade)
         if trade["longQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
+            if symbol == "MMDA1":
+                break
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 2
@@ -343,6 +345,8 @@ def check_short_trades(client):
         # print(trade)
         if trade["shortQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
+            if symbol == "MMDA1":
+                break
             qty = trade["shortQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 0.5
