@@ -5,13 +5,28 @@ import glob
 import os
 import sys
 
-from tda.orders.equities import equity_buy_limit
+from tda.orders.equities import equity_buy_limit, equity_sell_limit
 from tda.orders.common import OrderType
 
 from client_builder import build_client
 from canceler import cancel_all
 
 from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
+
+def create_order(client, symbol, entry_price, qty, order_type):
+    if order_type == "short":
+        # simple order
+        client.place_order(
+            account_id=ACCOUNT_ID,
+            order_spec=equity_sell_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
+        )
+
+    elif order_type == "long":
+        # simple order
+        client.place_order(
+            account_id=ACCOUNT_ID,
+            order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
+        )
 
 def daily_trader():
     list_of_files = glob.glob("./csv's/trades/*.csv") 
@@ -67,25 +82,33 @@ def daily_trader():
             entries+=1
             symbol = row['Symbol']
             last = float(row['Last'])
-            entry_price = round(last + 0.30, 2)
+            quote = client.get_quote(symbol)
+            bid = quote.json()[symbol]["bidPrice"]
+            ask = quote.json()[symbol]["askPrice"]
+            avg_price = round((bid + ask) / 2, 2)
             qty = int(round(investment_per_trade / entry_price, 0))
+            print(f"qty is {qty}")
+            
+            if avg_price + 0.5 < last: # if the price has moved down more than 50 cents, avg + 0.5 will be lower than last, and try to short the stock
+                order_type = "short"
+                entry_price = round(last - 0.30, 2)
+                sl_price = str(round(entry_price * 1.07, 2))
+            elif avg_price >= last: # if the price is moving up, then go long with it
+                order_type = "long"
+                sl_price = str(round(entry_price * 0.93, 2))
+                entry_price = round(last + 0.30, 2)
             if entry_price == 0 or qty == 0:
                 continue
-            print(f"qty is {qty}")
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
-            sl_price = str(round(entry_price * 0.93, 2))
-            print(f"Symbol: {symbol} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            
+            print(f"Symbol: {symbol} side: {order_type} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
             
             try:
-                # simple order
-                client.place_order(
-                   account_id=ACCOUNT_ID,
-                   order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
-                )
+                create_order(client, symbol, entry_price, qty, order_type)
                 order_num+=1
-            except:
-                print(f"Error with {symbol}")
+            except Exception as err:
+                print(f"Error with {symbol}: {err}")
                 error_num+=1
                 pass
         print(f"{entries} Entries found.")

@@ -259,8 +259,8 @@ def grab_current_stoploss(symbol):
     csvfile.close()
     return float(sl)
 
-def check_long_trades():
-    client = build_client()
+def check_long_trades(client):
+    
     account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()["securitiesAccount"]
     try:
         positions = account_with_positions["positions"]
@@ -313,7 +313,62 @@ def check_long_trades():
             else:
                 print(f"not enough gain to move stops for {symbol}.")
                 continue
-            
+
+def check_short_trades(client):
+    account_with_positions = client.get_account(account_id=ACCOUNT_ID, fields=client.Account.Fields.POSITIONS).json()["securitiesAccount"]
+    try:
+        positions = account_with_positions["positions"]
+    except:
+        positions = {}
+    # print(orders)
+    for trade in positions:
+        # print("trade:")
+        # print(trade)
+        if trade["shortQuantity"] > 0:
+            symbol = trade["instrument"]["symbol"]
+            qty = trade["shortQuantity"]
+            entry_price = float(trade["averagePrice"])
+            exit_price = float(entry_price) * 0.5
+            # print(f"test: {test}")
+            current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
+            current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
+            current_price = (current_ask_price + current_bid_price) / 2
+            percent_gain = round((entry_price - current_price) / entry_price * 100, 2)
+            # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
+            # The rest of the checks make sure stop loss is trailing. 
+            # "Continue" lines are important for speeding up the process of checking stops for multiple stocks
+            check = check_for_exit(symbol)
+            # if the exits don't exist, create them
+            if check != True:
+                create_exit(symbol, entry_price, round(entry_price*1.07, 2), round(exit_price, 2), qty)
+
+            stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
+            distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
+            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
+            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
+
+            # check current trades to see if it's time for an exit
+            killed_trade = kill_trade_or_not(symbol, current_price, qty)
+            if killed_trade:
+                continue # skip the rest of the checks
+            else:
+                pass
+             # kill trade if it drops 7% below entry
+            if percent_gain <= -7:
+                kill_trade(symbol, qty, current_price)
+            # cash in winners
+            elif current_price >= exit_price:
+                kill_trade(symbol, qty, current_price)
+            # start a trailing stop of 7%
+            elif distance_from_stoploss > 7:
+                check_for_stop(symbol, round(current_price*1.07,2), qty)
+                continue
+            # log that there isn't enough profit to move stop
+            else:
+                print(f"not enough gain to move stops for {symbol}.")
+                continue
+
+
 def rate_limiter(count):
     # rate limit on API of 200 request per min, so this keeps the position and order calls down to about 30 per min, leaving room for modifying stops.
     print(f"Finished run number {count}. Starting next trade check.")
@@ -373,9 +428,13 @@ def run_watchdog(count):
     # poor man's web socket
     while count < 7500:
         count+=1
-        tCLT = threading.Thread(target=check_long_trades)
+        client = build_client()
+        tCLT = threading.Thread(target=check_long_trades(client))
         tCLT.start()
+        tCST = threading.Thread(target=check_short_trades(client))
+        tCST.start()
         tCLT.join()
+        tCST.join()
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
