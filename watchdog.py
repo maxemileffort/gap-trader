@@ -179,7 +179,7 @@ def check_for_exit(symbol):
     else:
         return False
 
-def check_for_stop(symbol, new_stop, qty):
+def check_for_stop(symbol, new_stop, qty, order_type):
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -198,9 +198,14 @@ def check_for_stop(symbol, new_stop, qty):
                 # print(row)
                 # check for matching stop order
                 try:
-                    # if new price and old price are different, move the stop only if the new stop is greater than the old stop
-                    if new_stop != float(row['stop_loss']) and new_stop > float(row['stop_loss']):
+                    # if new price and old price are different, for long trades, 
+                    # move the stop only if the new stop is greater than the old stop
+                    if order_type == "long" and new_stop != float(row['stop_loss']) and new_stop > float(row['stop_loss']):
                         # "Move" stop (most times it just gets put in exact same spot)
+                        print(f'Moving stop for {symbol} to {new_stop}')
+                        move_stop(symbol, new_stop, qty)
+                        break
+                    elif order_type == "short" and new_stop != float(row['stop_loss']) and new_stop < float(row['stop_loss']):
                         print(f'Moving stop for {symbol} to {new_stop}')
                         move_stop(symbol, new_stop, qty)
                         break
@@ -307,7 +312,7 @@ def check_long_trades(client):
                 kill_trade(symbol, qty, current_price)
             # start a trailing stop of 7%
             elif distance_from_stoploss > 7:
-                check_for_stop(symbol, round(current_price*0.93,2), qty)
+                check_for_stop(symbol=symbol, new_stop=round(current_price*0.93,2), qty=qty, order_type="long")
                 continue
             # log that there isn't enough profit to move stop
             else:
@@ -361,7 +366,7 @@ def check_short_trades(client):
                 kill_trade(symbol, qty, current_price)
             # start a trailing stop of 7%
             elif distance_from_stoploss > 7:
-                check_for_stop(symbol, round(current_price*1.07,2), qty)
+                check_for_stop(symbol=symbol, new_stop=round(current_price*1.07,2), qty=qty, order_type="short")
                 continue
             # log that there isn't enough profit to move stop
             else:
@@ -431,10 +436,10 @@ def run_watchdog(count):
         client = build_client()
         tCLT = threading.Thread(target=check_long_trades(client))
         tCLT.start()
-        # tCST = threading.Thread(target=check_short_trades(client))
-        # tCST.start()
+        tCST = threading.Thread(target=check_short_trades(client))
+        tCST.start()
         tCLT.join()
-        # tCST.join()
+        tCST.join()
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
