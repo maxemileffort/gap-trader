@@ -90,9 +90,9 @@ def daily_trader():
             print(last)
             
             # if the price has moved down more than 50 cents, avg + 0.5 will be lower than last, and try to short the stock
-            if avg_price + 0.5 < last: 
+            if avg_price + 0.35 < last: 
                 order_type = "short"
-                entry_price = round(last - 0.60, 2)
+                entry_price = round(last - 0.45, 2)
                 sl_price = str(round(entry_price * 1.07, 2))
             # if the price is moving up, then go long with it
             else: 
