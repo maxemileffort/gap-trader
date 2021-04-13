@@ -270,7 +270,7 @@ def check_long_trades(client):
     for trade in positions:
         # print("trade:")
         # print(trade)
-        if trade["longQuantity"] > 0:
+        if trade["longQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
@@ -324,7 +324,7 @@ def check_short_trades(client):
     for trade in positions:
         # print("trade:")
         # print(trade)
-        if trade["shortQuantity"] > 0:
+        if trade["shortQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
             qty = trade["shortQuantity"]
             entry_price = float(trade["averagePrice"])
@@ -431,10 +431,10 @@ def run_watchdog(count):
         client = build_client()
         tCLT = threading.Thread(target=check_long_trades(client))
         tCLT.start()
-        tCST = threading.Thread(target=check_short_trades(client))
-        tCST.start()
+        # tCST = threading.Thread(target=check_short_trades(client))
+        # tCST.start()
         tCLT.join()
-        tCST.join()
+        # tCST.join()
         tRL = threading.Thread(target=rate_limiter(count))
         tRL.start()
         tRL.join()
