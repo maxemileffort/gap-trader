@@ -43,7 +43,7 @@ def daily_trader():
     # SUBSTITUTE
     account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
     
-    print(f"account: {account}")
+    # print(f"account: {account}")
     # choose between account["currentBalances"][totalCash] for cash accounts, 
     # or account["currentBalances"]["buyingPower"]
     if account["type"] == "CASH":
