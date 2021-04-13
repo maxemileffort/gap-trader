@@ -89,12 +89,12 @@ def daily_trader():
             print(avg_price)
             print(last)
             
-            # if the price has moved down more than 50 cents, avg + 0.5 will be lower than last, and try to short the stock
+            # if the price has moved down more than 35 cents, avg + 0.35 will be lower than last, and try to short the stock
             if avg_price + 0.35 < last: 
                 order_type = "short"
                 entry_price = round(last - 0.45, 2)
                 sl_price = str(round(entry_price * 1.07, 2))
-            # if the price is moving up, then go long with it
+            # otherwise, price is stable or moving up, so make a long order
             else: 
                 order_type = "long"
                 entry_price = round(last + 0.30, 2)
@@ -106,7 +106,8 @@ def daily_trader():
             volume = row['Volume'] # to be used later
             gap_up_percent = row['Gap Up%'] # to be used later
             
-            print(f"Symbol: {symbol} side: {order_type} target entry: {entry_price} Stop Loss price: {sl_price} Vol: {volume} Gap Up% {gap_up_percent}")
+            print(f"Symbol: {symbol} side: {order_type} target entry: {entry_price} Stop Loss price: {sl_price}")
+            print(f"Symbol: {symbol} Vol: {volume} Gap Up% {gap_up_percent}")
             
             try:
                 create_order(client, symbol, entry_price, qty, order_type)
