@@ -28,13 +28,14 @@ def await_market_open(num):
     
     # start app right at 9:30 est from scheduler
     if clock["isOpen"] == True:
-        print("Market open, sleeping for 5 min then beginning process.")
         now = datetime.datetime.now()
         market_open_raw = "08:30:00"
         market_open = datetime.datetime.strptime(market_open_raw, "%H:%M:%S")
-        market_open = now.replace(hour=market_open.time().hour, minute=market_open.time().minute, second=market_open.time().second, microsecond=0)
-        if (now < market_open):
+        market_open_check = datetime.datetime.now().replace(hour=market_open.time().hour, minute=market_open.time().minute, second=market_open.time().second, microsecond=0)
+        if (now < market_open_check):
+            print("Market open, sleeping for 5 min then beginning process.")
             time.sleep(60*5)
+        print("Beginning process.")
         scraper()           #
         assess('skip')      #
         time.sleep(1)       # This whole process (from scrape to starting watchdog) takes about 2-5 minutes
