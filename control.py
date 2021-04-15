@@ -28,13 +28,12 @@ def await_market_open(num):
     
     # start app right at 9:30 est from scheduler
     if clock["isOpen"] == True:
-        now = datetime.datetime.now()
-        market_open_raw = "08:30:00"
-        market_open = datetime.datetime.strptime(market_open_raw, "%H:%M:%S")
-        market_open_check = datetime.datetime.now().replace(hour=market_open.time().hour, minute=market_open.time().minute, second=market_open.time().second, microsecond=0)
-        if (now < market_open_check):
-            print("Market open, sleeping for 5 min then beginning process.")
-            time.sleep(60*5)
+        opening_time = time.mktime(datetime.datetime.now().replace(hour=8, minute=30, second=0, microsecond=0).timetuple())
+        curr_time = time.mktime(datetime.datetime.now().timetuple())
+        market_open_check = curr_time - opening_time
+        if (market_open_check <= 5):
+            print(f"Market open, sleeping for {market_open_check} min then beginning process.")
+            time.sleep(60*market_open_check)
         print("Beginning process.")
         scraper()           #
         assess('skip')      #
