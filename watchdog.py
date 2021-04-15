@@ -449,16 +449,21 @@ def run_watchdog(count):
     # poor man's web socket
     while count < 7500:
         count+=1
-        client = build_client()
-        tCLT = threading.Thread(target=check_long_trades(client))
-        tCLT.start()
-        tCST = threading.Thread(target=check_short_trades(client))
-        tCST.start()
-        tCLT.join()
-        tCST.join()
-        tRL = threading.Thread(target=rate_limiter(count))
-        tRL.start()
-        tRL.join()
+        try:
+            client = build_client()
+            tCLT = threading.Thread(target=check_long_trades(client))
+            tCLT.start()
+            tCST = threading.Thread(target=check_short_trades(client))
+            tCST.start()
+            tCLT.join()
+            tCST.join()
+            tRL = threading.Thread(target=rate_limiter(count))
+            tRL.start()
+            tRL.join()
+        except:
+            print("something went wrong running process, probably connection timeout.")
+            print("Unexpected error:", sys.exc_info())
+            pass
 
 if __name__ == "__main__":
     # run_watchdog(0)
