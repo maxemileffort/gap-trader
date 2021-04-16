@@ -309,7 +309,7 @@ def check_long_trades(client):
 
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
-            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
+            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
@@ -365,7 +365,7 @@ def check_short_trades(client):
 
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
-            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}')
+            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
             print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit

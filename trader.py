@@ -5,7 +5,7 @@ import glob
 import os
 import sys
 
-from tda.orders.equities import equity_buy_limit, equity_sell_limit
+from tda.orders.equities import equity_buy_limit, equity_sell_limit, equity_sell_short_limit
 from tda.orders.common import OrderType
 
 from client_builder import build_client
@@ -15,14 +15,12 @@ from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def create_order(client, symbol, entry_price, qty, order_type):
     if order_type == "short":
-        # simple order
         client.place_order(
             account_id=ACCOUNT_ID,
-            order_spec=equity_sell_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
+            order_spec=equity_sell_short_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
         )
 
     elif order_type == "long":
-        # simple order
         client.place_order(
             account_id=ACCOUNT_ID,
             order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
