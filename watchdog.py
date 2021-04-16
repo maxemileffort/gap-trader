@@ -2,6 +2,7 @@ import datetime, time, csv, threading, sys, subprocess
 import glob
 import os
 from pathlib import Path
+import logging
 
 import pandas as pd
 from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
@@ -13,6 +14,29 @@ from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 from client_builder import build_client
+
+# set up logging to file - see previous section for more details
+_date = datetime.datetime.now()
+local_date = _date.strftime("%x").replace("/", "_")
+_file = Path(f'./logs/{local_date}-log.txt')
+if _file.exists():
+    pass
+else:
+    _file.touch()
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename=f'./logs/{local_date}-log.txt',
+                    filemode='w')
+# define a Handler which writes INFO messages or higher to the sys.stderr
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+# set a format which is simpler for console use
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+# tell the handler to use this format
+console.setFormatter(formatter)
+# add the handler to the root logger
+logging.getLogger().addHandler(console)
 
 count = 0
 def start_test(count):
@@ -45,35 +69,35 @@ def kill_trade_or_not(symbol, current_price, qty, order_type):
     location = f"./csv's/monitors/{file_string}"
 
     # import csv as dataframe
-    print("Kill trade or not...")
+    logging.info("Kill trade or not...")
     df = pd.read_csv(location)
     filt = df['symbol'] == symbol
     stop_loss = df.loc[filt, 'stop_loss']
-    # print(stop_loss)
-    # print(stop_loss.iloc[0])
+    # logging.info(stop_loss)
+    # logging.info(stop_loss.iloc[0])
     # if current_price is below stop, cancel orders and sell off position
     try:
         if order_type == "long" and float(current_price) <= float(stop_loss.iloc[0]):
-            print("Kill trade.")
+            logging.info("Kill trade.")
             kill_trade(symbol, qty, current_price, order_type)
             return True
         elif order_type == "short" and float(current_price) >= float(stop_loss.iloc[0]):
-            print("Kill trade.")
+            logging.info("Kill trade.")
             kill_trade(symbol, qty, current_price, order_type)
             return True
         else:
-            print("Not killing trade.")
-            print("Current price still away from stop_loss")
+            logging.info("Not killing trade.")
+            logging.info("Current price still away from stop_loss")
             return False
     except:
-        print("Unexpected error checking stops:", sys.exc_info())
+        logging.info(f"Unexpected error checking stops: {sys.exc_info()}")
         pass
 
 def move_stop(symbol, new_price, qty):
     # search orders list for orders that are sell stop orders with matching symbols, 
     # as that is the stop loss, and move price up to new price
-    # print(symbol)
-    # print(new_price)
+    # logging.info(symbol)
+    # logging.info(new_price)
 
     # find monitor file
     _date = datetime.datetime.now()
@@ -83,19 +107,19 @@ def move_stop(symbol, new_price, qty):
 
     # import csv as dataframe
     df = pd.read_csv(location)
-    # print("initial move stop df:")
-    # print(df)
+    # logging.info("initial move stop df:")
+    # logging.info(df)
 
     # rewrite dataframe with new stop
     # use df.loc to do this. video: https://www.youtube.com/watch?v=DCDe29sIKcE&list=RDCMUCCezIgC97PvUuR4_gbFUs5g&index=5
     try:
         filt = df['symbol'] == symbol
         df.loc[filt, 'stop_loss'] = new_price
-        print(f"new stop loss for {symbol}: {new_price}")
+        logging.info(f"new stop loss for {symbol}: {new_price}")
     except:
-        print("Unexpected error moving stop:", sys.exc_info())
-        print("unchanged move stop df:")
-        print(df)
+        logging.info(f"Unexpected error moving stop: {sys.exc_info()}")
+        logging.info("unchanged move stop df:")
+        logging.info(df)
 
     # rewrite csv with new dataframe
     df.to_csv(location, index=False)
@@ -107,47 +131,47 @@ def create_exit(symbol, entry_price, stop_loss, take_profit, qty):
     local_date = _date.strftime("%x").replace("/", "_")
     file_string = f"monitor-{local_date}.csv"
     location = f"./csv's/monitors/{file_string}"
-    print("Creating exit...")
+    logging.info("Creating exit...")
     try:
         # import csv as dataframe
         df = pd.read_csv(location)
-        # print("create exit df:")
-        # print(df)
+        # logging.info("create exit df:")
+        # logging.info(df)
         # construct new row
         # append new row to df if it doesn't exist already
         try:
             # check df for entry
             locator = df.loc[df[symbol]]
-            # print("locator:")
-            # print(locator)
+            # logging.info("locator:")
+            # logging.info(locator)
         except:
-            # if it doesn't exist, return False and print the error
-            print("Unexpected error creating exit:", sys.exc_info())
+            # if it doesn't exist, return False and logging.info the error
+            logging.info(f"Unexpected error creating exit: {sys.exc_info()}")
             locator = False
             pass
         if locator:
             # if an entry exists, don't do anything
-            print("entry exists")
+            logging.info("entry exists")
         else:
             # otherwise, append the entire row
             row = [symbol, entry_price, stop_loss, take_profit, qty, '']
-            # print("row:")
-            # print(row)
+            # logging.info("row:")
+            # logging.info(row)
             df.loc[len(df.index)] = row
         # save new df as csv
-        # print("new create exit df:")
-        # print(df)
+        # logging.info("new create exit df:")
+        # logging.info(df)
         df.to_csv(location, index=False)
     except FileNotFoundError:
         # if it doesn't exist, create it and try to access it again
-        print("file not found, creating now.")
+        logging.info("file not found, creating now.")
         Path(location).touch()
         with open(location, 'w', newline='') as csvfile:
             fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty', "actual_exit"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
         csvfile.close()
-        print("file created, trying to create exit again.")
+        logging.info("file created, trying to create exit again.")
         create_exit(symbol, entry_price, stop_loss, take_profit, qty)
 
     
@@ -161,21 +185,21 @@ def check_for_exit(symbol):
     match = ''
     try:
         with open(location, 'r', newline='') as csvfile:
-            # print("found monitor")
+            # logging.info("found monitor")
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row["symbol"] == symbol:
                     # did find entry in monitor
-                    # print("found entry in monitor")
+                    # logging.info("found entry in monitor")
                     match = symbol        
                     break
                 else:
                     # didn't find entry in monitor
-                    # print("did not find entry this time")
+                    # logging.info("did not find entry this time")
                     continue
         csvfile.close()
     except FileNotFoundError:
-        print("monitor file not found...")
+        logging.info("monitor file not found...")
         return False
     
     if match:
@@ -191,7 +215,7 @@ def check_for_stop(symbol, new_stop, qty, order_type):
     location = f"./csv's/monitors/{file_string}"
 
     # check for entry by symbol
-    print("checking stop")
+    logging.info("checking stop")
     with open(location, 'r', newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         match = ''
@@ -199,30 +223,30 @@ def check_for_stop(symbol, new_stop, qty, order_type):
             # did find entry in monitor
             if row["symbol"] == symbol:
                 match = symbol
-                # print(row)
+                # logging.info(row)
                 # check for matching stop order
                 try:
                     # if new price and old price are different, for long trades, 
                     # move the stop only if the new stop is greater than the old stop
                     if order_type == "long" and new_stop != float(row['stop_loss']) and new_stop > float(row['stop_loss']):
                         # "Move" stop (most times it just gets put in exact same spot)
-                        print(f'Moving stop for {symbol} to {new_stop}')
+                        logging.info(f'Moving stop for {symbol} to {new_stop}')
                         move_stop(symbol, new_stop, qty)
                         break
                     elif order_type == "short" and new_stop != float(row['stop_loss']) and new_stop < float(row['stop_loss']):
-                        print(f'Moving stop for {symbol} to {new_stop}')
+                        logging.info(f'Moving stop for {symbol} to {new_stop}')
                         move_stop(symbol, new_stop, qty)
                         break
                     # if new price and old price match, do nothing
                     else:
-                        print("Stop in right place for now.")
+                        logging.info("Stop in right place for now.")
                         break
                 except:
-                    print("Unexpected error checking stop:", sys.exc_info())
+                    logging.info(f"Unexpected error checking stop: {sys.exc_info()}")
                     pass
         # didn't find entry in monitor
         if match == '':
-            print("Problem finding stop.")
+            logging.info("Problem finding stop.")
     csvfile.close()
 
 def record_trade(symbol, price):
@@ -247,18 +271,17 @@ def kill_trade(symbol, qty, price, order_type):
                     account_id=ACCOUNT_ID, 
                     order_spec=equity_sell_market(symbol, qty)
                 )
-            print("Killed trade")
+            logging.info("Killed trade")
             record_trade(symbol, price)
         else:
             client.place_order(
                     account_id=ACCOUNT_ID, 
                     order_spec=equity_buy_market(symbol, qty)
                 )
-            print("Killed trade")
+            logging.info("Killed trade")
             record_trade(symbol, price)
     except:
-        print("something went wrong killing trade.")
-        print("Unexpected error:", sys.exc_info())
+        logging.info(f"Unexpected error killing trade: {sys.exc_info()}")
         pass
 
 def grab_current_stoploss(symbol):
@@ -283,10 +306,10 @@ def check_long_trades(client):
         positions = account_with_positions["positions"]
     except:
         positions = {}
-    # print(orders)
+    # logging.info(orders)
     for trade in positions:
-        # print("trade:")
-        # print(trade)
+        # logging.info("trade:")
+        # logging.info(trade)
         if trade["longQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
             if symbol == "MMDA1":
@@ -294,7 +317,7 @@ def check_long_trades(client):
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 2
-            # print(f"test: {test}")
+            # logging.info(f"test: {test}")
             current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
             current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
@@ -309,8 +332,8 @@ def check_long_trades(client):
 
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
-            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
-            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
+            logging.info(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
+            logging.info(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty, 'long')
@@ -330,7 +353,7 @@ def check_long_trades(client):
                 continue
             # log that there isn't enough profit to move stop
             else:
-                print(f"not enough gain to move stops for {symbol}.")
+                logging.info(f"not enough gain to move stops for {symbol}.")
                 continue
 
 def check_short_trades(client):
@@ -339,10 +362,10 @@ def check_short_trades(client):
         positions = account_with_positions["positions"]
     except:
         positions = {}
-    # print(orders)
+    # logging.info(orders)
     for trade in positions:
-        # print("trade:")
-        # print(trade)
+        # logging.info("trade:")
+        # logging.info(trade)
         if trade["shortQuantity"] > 0 and trade["longQuantity"] != trade["shortQuantity"]:
             symbol = trade["instrument"]["symbol"]
             if symbol == "MMDA1":
@@ -350,7 +373,7 @@ def check_short_trades(client):
             qty = trade["shortQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 0.5
-            # print(f"test: {test}")
+            # logging.info(f"test: {test}")
             current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
             current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
@@ -365,8 +388,8 @@ def check_short_trades(client):
 
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
-            print(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
-            print(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
+            logging.info(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
+            logging.info(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty, "short")
@@ -386,13 +409,13 @@ def check_short_trades(client):
                 continue
             # log that there isn't enough profit to move stop
             else:
-                print(f"not enough gain to move stops for {symbol}.")
+                logging.info(f"not enough gain to move stops for {symbol}.")
                 continue
 
 
 def rate_limiter(count):
     # rate limit on API of 200 request per min, so this keeps the position and order calls down to about 30 per min, leaving room for modifying stops.
-    print(f"Finished run number {count}. Starting next trade check.")
+    logging.info(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
     slow_down = count % 120 # clock calls were ending the script prematurely so slowed them down
@@ -405,18 +428,18 @@ def rate_limiter(count):
 
     # Close all positions when 15 minutes til market close.
     if(timeToClose < (60 * 10)):
-        print("Market closing soon.  Closing positions.")
+        logging.info("Market closing soon.  Closing positions.")
         date = datetime.datetime.now()
         local_date = date.strftime("%x")
         local_time = date.strftime("%X")
         cancel_all()
-        print(f"Finish time: {local_time} on {local_date}")
+        logging.info(f"Finish time: {local_time} on {local_date}")
         # because script is started by local batch file, we want it to 
         # exit every day, so it closes the cmd prompt
         sys.exit()
     # slow down time between calls to 5 sec    
     else:
-        print("next check in 4...") 
+        logging.info("next check in 4...") 
         time.sleep(4) 
 
 def rebuild_monitor():
@@ -465,8 +488,8 @@ def run_watchdog(count):
         except KeyboardInterrupt:
             sys.exit()
         except:
-            print("something went wrong running process, probably connection timeout.")
-            print("Unexpected error:", sys.exc_info())
+            logging.info("something went wrong running process, probably connection timeout.")
+            logging.info(f"Unexpected error: {sys.exc_info()}")
             pass
 
 if __name__ == "__main__":

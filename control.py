@@ -1,9 +1,11 @@
 # control
 import time, datetime, getopt, sys, threading
+
 from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 from watchdog import run_watchdog
+from setup_folders import setup_folders
 
 import tda
 from client_builder import build_client
@@ -16,6 +18,7 @@ option_string = ('What would you like to do? (Pick a number)\n 1. Scrape Data On
 
 # automate starting entire script
 def await_market_open(num):
+    setup_folders()
     num += 1
     if num > 4:
         print("market not opening today")
@@ -48,6 +51,7 @@ def await_market_open(num):
         sys.exit()
 
 def present_selection():
+    setup_folders()
     print(option_string)
     choice = input("Make a selection:   ")
     eval_choice(choice)

@@ -2,6 +2,7 @@
 *.csv
 
 /tokens
+/logs
 
 scratch.py
 
