@@ -42,9 +42,8 @@ def await_market_open(num):
         time.sleep(1)       # starts trading
         run_watchdog(0)     #
     else:
-        print("market ain't open, sleeping til it does.")
-        time.sleep(60)    
-        await_market_open(num)
+        print("market not open today.")
+        sys.exit()
 
 def present_selection():
     print(option_string)
