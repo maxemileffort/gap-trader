@@ -447,7 +447,7 @@ def rescan_stocks():
 
 def run_watchdog(count):
     # poor man's web socket
-    while count < 7500:
+    while count < 6500:
         count+=1
         try:
             client = build_client()
@@ -460,6 +460,10 @@ def run_watchdog(count):
             tRL = threading.Thread(target=rate_limiter(count))
             tRL.start()
             tRL.join()
+        except SystemExit:
+            sys.exit()
+        except KeyboardInterrupt:
+            sys.exit()
         except:
             print("something went wrong running process, probably connection timeout.")
             print("Unexpected error:", sys.exc_info())
