@@ -15,7 +15,7 @@ from trader import daily_trader
 from assessor import assess
 from client_builder import build_client
 
-# set up logging to file - see previous section for more details
+# set up logging to file - copied from https://docs.python.org/3/howto/logging-cookbook.html
 _date = datetime.datetime.now()
 local_date = _date.strftime("%x").replace("/", "_")
 _file = Path(f'./logs/{local_date}-log.txt')
