@@ -34,13 +34,6 @@ def await_market_open(num):
     # app starts right at 9:30 est from scheduler
     # if it's a trading day, start the app
     if clock["isOpen"] == True:
-        opening_time = time.mktime(datetime.datetime.now().replace(hour=8, minute=30, second=0, microsecond=0).timetuple())
-        curr_time = time.mktime(datetime.datetime.now().timetuple())
-        market_open_check = curr_time - opening_time
-        print(f"market_open_check: {market_open_check}")
-        if (market_open_check <= 5*60):
-            print(f"Market open, sleeping for {market_open_check} min then beginning process.")
-            time.sleep(60*market_open_check)
         print("Beginning process.")
         scraper()           #
         assess('skip')      #
