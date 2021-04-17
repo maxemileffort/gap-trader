@@ -26,9 +26,11 @@ def await_market_open(num):
     print("checking time...")
     client = build_client()
     today = datetime.date.today()
-    clock = client.get_hours_for_single_market(market=client.Markets.EQUITY, date=today).json()["equity"]["EQ"]
-    # print(clock)
-    
+    try:
+        clock = client.get_hours_for_single_market(market=client.Markets.EQUITY, date=today).json()["equity"]["EQ"]
+    except:
+        clock = client.get_hours_for_single_market(market=client.Markets.EQUITY, date=today).json()["equity"]["equity"]
+
     # app starts right at 9:30 est from scheduler
     # if it's a trading day, start the app
     if clock["isOpen"] == True:
