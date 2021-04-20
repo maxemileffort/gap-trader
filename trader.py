@@ -15,16 +15,25 @@ from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def create_order(client, symbol, entry_price, qty, order_type):
     if order_type == "short":
-        client.place_order(
-            account_id=ACCOUNT_ID,
-            order_spec=equity_sell_short_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
-        )
+        try:
+            client.place_order(
+                account_id=ACCOUNT_ID,
+                order_spec=equity_sell_short_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
+            )
+        except:
+            print(f"something went wrong creating short sell order: {sys.exc_info()}")
+            pass
 
     elif order_type == "long":
-        client.place_order(
-            account_id=ACCOUNT_ID,
-            order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
-        )
+        try:
+            client.place_order(
+                account_id=ACCOUNT_ID,
+                order_spec=equity_buy_limit(symbol, qty, entry_price).set_order_type(OrderType.STOP).clear_price().set_stop_price(entry_price)
+            )
+        except:
+            print(f"something went wrong creating order: {sys.exc_info()}")
+            pass
+
 
 def daily_trader():
     list_of_files = glob.glob("./csv's/trades/*.csv") 
