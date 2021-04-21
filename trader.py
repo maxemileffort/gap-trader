@@ -4,6 +4,7 @@ import csv
 import glob
 import os
 import sys
+import datetime
 
 from tda.orders.equities import equity_buy_limit, equity_sell_limit, equity_sell_short_limit
 from tda.orders.common import OrderType
@@ -32,6 +33,23 @@ def create_order(client, symbol, entry_price, qty, order_type):
         except:
             print(f"something went wrong creating order: {sys.exc_info()}")
             pass
+
+def check_for_trade(symbol):
+    # find monitor file
+    _date = datetime.datetime.now()
+    local_date = _date.strftime("%x").replace("/", "_")
+    file_string = f"monitor-{local_date}.csv"
+    location = f"./csv's/monitors/{file_string}"
+    # check for entry by symbol
+    with open(location, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # did find entry in monitor
+            if row["symbol"] == symbol:
+                return True
+            else:
+                return False
+    csvfile.close()
 
 def daily_trader(str_):
     list_of_files = glob.glob("./csv's/trades/*.csv") 
@@ -94,9 +112,12 @@ def daily_trader(str_):
             bid = quote.json()[symbol]["bidPrice"]
             ask = quote.json()[symbol]["askPrice"]
             avg_price = round((bid + ask) / 2, 2)
-            print(avg_price)
-            print(last)
-            
+            trade_check = check_for_trade(symbol)
+
+            if not trade_check:
+                pass
+            else:
+                continue
             # if the price has moved down more than 35 cents, avg + 0.35 will be lower than last, and try to short the stock
             if avg_price + 0.35 < last: 
                 order_type = "short"
