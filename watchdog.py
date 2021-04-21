@@ -319,8 +319,9 @@ def check_long_trades(client):
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 2
             # logging.info(f"test: {test}")
-            current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
-            current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
+            symbol_quote_obj = client.get_quote(symbol).json()[symbol]
+            current_bid_price = round(float(symbol_quote_obj["bidPrice"]),2)
+            current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
@@ -375,8 +376,9 @@ def check_short_trades(client):
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 0.5
             # logging.info(f"test: {test}")
-            current_bid_price = round(float(client.get_quote(symbol).json()[symbol]["bidPrice"]),2)
-            current_ask_price = round(float(client.get_quote(symbol).json()[symbol]["askPrice"]),2)
+            symbol_quote_obj = client.get_quote(symbol).json()[symbol]
+            current_bid_price = round(float(symbol_quote_obj["bidPrice"]),2)
+            current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
             percent_gain = round((entry_price - current_price) / entry_price * 100, 2)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
