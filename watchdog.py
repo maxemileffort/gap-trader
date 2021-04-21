@@ -14,6 +14,7 @@ from scraper import scraper
 from trader import daily_trader
 from assessor import assess
 from client_builder import build_client
+from file_cleanup import cleanup_files
 
 # set up logging to file - copied from https://docs.python.org/3/howto/logging-cookbook.html
 _date = datetime.datetime.now()
@@ -436,6 +437,7 @@ def rate_limiter(count):
         logging.info(f"Finish time: {local_time} on {local_date}")
         # because script is started by local batch file, we want it to 
         # exit every day, so it closes the cmd prompt
+        cleanup_files()
         sys.exit()
     # slow down time between calls to 5 sec    
     else:

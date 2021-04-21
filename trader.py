@@ -42,7 +42,7 @@ def daily_trader(str_):
 
     # if str_ == "initial":
     # cancel all open orders
-    cancel_all()
+    cancel_all('orders')
     # else:
         # it's a re-run, so don't cancel orders
         # pass
