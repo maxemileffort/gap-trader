@@ -350,7 +350,7 @@ def check_long_trades(client):
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "long")
             # start a trailing stop of 7%
-            elif distance_from_stoploss > 7:
+            elif distance_from_stoploss > 7.0:
                 check_for_stop(symbol=symbol, new_stop=round(current_price*0.93,2), qty=qty, order_type="long")
                 continue
             # log that there isn't enough profit to move stop
@@ -407,7 +407,7 @@ def check_short_trades(client):
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "short")
             # start a trailing stop of 7%
-            elif distance_from_stoploss > 7:
+            elif distance_from_stoploss > 7.0:
                 check_for_stop(symbol=symbol, new_stop=round(current_price*1.07,2), qty=qty, order_type="short")
                 continue
             # log that there isn't enough profit to move stop
