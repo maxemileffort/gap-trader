@@ -41,7 +41,7 @@ logging.getLogger().addHandler(console)
 
 count = 0
 def start_test(count):
-    cancel_all()
+    cancel_all('all')
     client = build_client()
     if count < 1:
         count+=1
@@ -433,7 +433,7 @@ def rate_limiter(count):
         date = datetime.datetime.now()
         local_date = date.strftime("%x")
         local_time = date.strftime("%X")
-        cancel_all()
+        cancel_all('all')
         logging.info(f"Finish time: {local_time} on {local_date}")
         # because script is started by local batch file, we want it to 
         # exit every day, so it closes the cmd prompt
