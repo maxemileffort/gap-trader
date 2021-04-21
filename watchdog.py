@@ -23,7 +23,7 @@ if _file.exists():
     pass
 else:
     _file.touch()
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename=f'./logs/{local_date}-log.txt',
@@ -473,16 +473,23 @@ def run_watchdog(count):
     while count < 6500:
         count+=1
         try:
-            client = build_client()
-            tCLT = threading.Thread(target=check_long_trades(client))
-            tCLT.start()
-            tCST = threading.Thread(target=check_short_trades(client))
-            tCST.start()
-            tCLT.join()
-            tCST.join()
-            tRL = threading.Thread(target=rate_limiter(count))
-            tRL.start()
-            tRL.join()
+            # run like normal on every check except for the ones at the 15 min mark
+            if count % 450 != 0:
+                client = build_client()
+                tCLT = threading.Thread(target=check_long_trades(client))
+                tCLT.start()
+                tCST = threading.Thread(target=check_short_trades(client))
+                tCST.start()
+                tCLT.join()
+                tCST.join()
+                tRL = threading.Thread(target=rate_limiter(count))
+                tRL.start()
+                tRL.join()
+            # at the 15 min mark, restart the whole process
+            else: 
+                scraper()
+                assess('skip')
+                daily_trader('re-run')
         except SystemExit:
             sys.exit()
         except KeyboardInterrupt:

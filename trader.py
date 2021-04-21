@@ -23,7 +23,6 @@ def create_order(client, symbol, entry_price, qty, order_type):
         except:
             print(f"something went wrong creating short sell order: {sys.exc_info()}")
             pass
-
     elif order_type == "long":
         try:
             client.place_order(
@@ -34,20 +33,22 @@ def create_order(client, symbol, entry_price, qty, order_type):
             print(f"something went wrong creating order: {sys.exc_info()}")
             pass
 
-
-def daily_trader():
+def daily_trader(str_):
     list_of_files = glob.glob("./csv's/trades/*.csv") 
     sorted_files = sorted(list_of_files, key=os.path.getctime)
     most_recent_file = sorted_files[-1] # last file should be most recent one
 
     client = build_client()
 
+    # if str_ == "initial":
     # cancel all open orders
     cancel_all()
+    # else:
+        # it's a re-run, so don't cancel orders
+        # pass
 
-    # close all profitable trades 
+    
     print("Getting account balance...")
-    # SUBSTITUTE
     account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
     
     # print(f"account: {account}")
@@ -129,4 +130,4 @@ def daily_trader():
     csvfile.close()
 
 if __name__ == '__main__':
-    daily_trader()
+    daily_trader('initial')

@@ -38,7 +38,7 @@ def await_market_open(num):
         scraper()           #
         assess('skip')      #
         time.sleep(1)       # This whole process (from scrape to starting watchdog) takes about 2-5 minutes
-        daily_trader()      # so there's also inherently a delay between market open and when the app 
+        daily_trader('initial')      # so there's also inherently a delay between market open and when the app 
         time.sleep(1)       # starts trading
         run_watchdog(0)     #
     else:
@@ -64,7 +64,7 @@ def eval_choice(choice):
         present_selection()
     elif choice == '3': # trade only
         print("creating orders...")
-        daily_trader()
+        daily_trader('initial')
         time.sleep(8)
         print("Orders created.")
         present_selection()
@@ -86,7 +86,7 @@ def eval_choice(choice):
         time.sleep(2)
         print("Files created.")
         print("creating orders...")
-        daily_trader()
+        daily_trader('initial')
         time.sleep(8)
         print("Orders created.")
         present_selection()
@@ -102,7 +102,7 @@ def eval_choice(choice):
         time.sleep(2)
         print("Files created.")
         print("creating orders...")
-        daily_trader()
+        daily_trader('initial')
         time.sleep(8)
         print("Orders created.")
         present_selection()
