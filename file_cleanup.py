@@ -21,9 +21,9 @@ def cleanup_files():
             pass
         for file_ in glob.glob(f'./{folder}/*.csv'):
             if current_date in file_:
-                print(file_)
+                # print(file_)
                 just_file_name = file_.replace(f"./{folder}", "")
-                print(just_file_name)
+                # print(just_file_name)
                 os.rename(file_, f'./{folder}/{current_date}{just_file_name}')
 
 
