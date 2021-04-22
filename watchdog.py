@@ -415,7 +415,6 @@ def check_short_trades(client):
                 logging.info(f"not enough gain to move stops for {symbol}.")
                 continue
 
-
 def rate_limiter(count):
     # rate limit on API of 200 request per min, so this keeps the position and order calls down to about 30 per min, leaving room for modifying stops.
     logging.info(f"Finished run number {count}. Starting next trade check.")
@@ -445,32 +444,6 @@ def rate_limiter(count):
     else:
         logging.info("next check in 4...") 
         time.sleep(4) 
-
-def rebuild_monitor():
-    # find monitor file
-    _date = datetime.datetime.now()
-    local_date = _date.strftime("%x").replace("/", "_")
-    file_string = f"monitor-{local_date}.csv"
-    location = f"./csv's/monitors/{file_string}"
-
-    # check if the monitor exists, and if it does, blank it out
-    try:
-        with open(location, 'w', newline='') as csvfile:
-            fieldnames = ['symbol', 'entry', 'stop_loss', 'take_profit', 'qty']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-        csvfile.close()
-    # if it doesn't exist, then don't worry about it
-    except:
-        pass
-
-def rescan_stocks():
-    # Lost $3k on a paper account due to this. 3/26/21
-    # first, clear the monitor file, or else the rescan will 
-    # repeatedly enter and exit trades
-    rebuild_monitor()
-    # rescan, assess, and trade
-    subprocess.Popen(["python", "control.py", "--rescan"])
 
 def run_watchdog(count):
     # poor man's web socket

@@ -35,6 +35,8 @@ def create_order(client, symbol, entry_price, qty, order_type):
             pass
 
 def check_for_trade(symbol):
+    # this prevents expanding on a position, 
+    # which usually makes the trade go from profitable to unprofitable
     # find monitor file
     _date = datetime.datetime.now()
     local_date = _date.strftime("%x").replace("/", "_")
@@ -75,6 +77,8 @@ def daily_trader(str_):
         # trades over 3 days to allow cash to settle. Also, using this 
         # number to automatically calculate qty of shares for each trade
         buying_power = account["currentBalances"]["totalCash"]
+        if buying_power == 0.0:
+            buying_power = account["currentBalances"]["cashAvailableForTrading"]
     else:
         # later, when using a margin account, this becomes 
         # a part of the risk management strategy
@@ -95,7 +99,10 @@ def daily_trader(str_):
     with open(most_recent_file, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         print("Creating orders...")
-        investment_per_trade = round(daily_investment / num_of_trades, 2)
+        try:
+            investment_per_trade = round(daily_investment / num_of_trades, 2)
+        except:
+            investment_per_trade = 0.0
         order_num = 0
         error_num = 0
         entries = 0
