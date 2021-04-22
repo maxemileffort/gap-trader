@@ -58,20 +58,15 @@ def daily_trader(str_):
 
     client = build_client()
 
-    # if str_ == "initial":
     # cancel all open orders
     cancel_all('orders')
-    # else:
-        # it's a re-run, so don't cancel orders
-        # pass
-
     
     print("Getting account balance...")
     account = client.get_account(account_id=ACCOUNT_ID).json()["securitiesAccount"]
-    
     # print(f"account: {account}")
+    
     # choose between account["currentBalances"][totalCash] for cash accounts, 
-    # or account["currentBalances"]["buyingPower"]
+    # or account["currentBalances"]["buyingPower"] for margin accounts
     if account["type"] == "CASH":
         # plan to use a cash account to avoid PDT rule, so need to spread the 
         # trades over 3 days to allow cash to settle. Also, using this 
@@ -114,10 +109,10 @@ def daily_trader(str_):
             avg_price = round((bid + ask) / 2, 2)
             trade_check = check_for_trade(symbol)
 
-            if not trade_check:
-                pass
-            else:
+            if trade_check:
                 continue
+            else:
+                pass
             # if the price has moved down more than 35 cents, avg + 0.35 will be lower than last, and try to short the stock
             if avg_price + 0.35 < last: 
                 order_type = "short"
