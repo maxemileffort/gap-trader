@@ -41,15 +41,18 @@ def check_for_trade(symbol):
     file_string = f"monitor-{local_date}.csv"
     location = f"./csv's/monitors/{file_string}"
     # check for entry by symbol
-    with open(location, 'r', newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            # did find entry in monitor
-            if row["symbol"] == symbol:
-                return True
-            else:
-                return False
-    csvfile.close()
+    if os.path.exists(location):
+        with open(location, 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                # did find entry in monitor
+                if row["symbol"] == symbol:
+                    return True
+                else:
+                    return False
+        csvfile.close()
+    else:
+        return False
 
 def daily_trader(str_):
     list_of_files = glob.glob("./csv's/trades/*.csv") 
