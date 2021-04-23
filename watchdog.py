@@ -459,7 +459,7 @@ def run_watchdog(count):
                 tCST.start()
                 tCLT.join()
                 tCST.join()
-                tRL = threading.Thread(target=rate_limiter(count))
+                tRL = threading.Thread(target=rate_limiter(count)) # this function has exit conditions
                 tRL.start()
                 tRL.join()
             # at the 15 min mark, restart the whole process

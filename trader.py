@@ -51,6 +51,7 @@ def check_for_trade(symbol):
                 # did find entry in monitor
                 if row["symbol"] == symbol:
                     match = symbol
+                    break
                 else:
                     continue
         csvfile.close()
@@ -107,6 +108,7 @@ def daily_trader(str_):
         print("Creating orders...")
         try:
             investment_per_trade = round(daily_investment / num_of_trades, 2)
+        # if number of trades == 0
         except:
             investment_per_trade = 0.0
         order_num = 0
@@ -129,10 +131,10 @@ def daily_trader(str_):
                 continue
             else:
                 pass
-            # if the price has moved down more than 35 cents, avg + 0.35 will be lower than last, and try to short the stock
-            if avg_price + 0.35 < last: 
+            # if the price has moved down more than 15 cents, avg + 0.15 will be lower than last, and try to short the stock
+            if avg_price + 0.15 < last: 
                 order_type = "short"
-                entry_price = round(last - 0.45, 2)
+                entry_price = round(last - 0.30, 2)
                 sl_price = str(round(entry_price * 1.07, 2))
             # otherwise, price is stable or moving up, so make a long order
             else: 
