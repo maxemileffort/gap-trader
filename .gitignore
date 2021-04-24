@@ -1,9 +1,9 @@
 *.env
 *.csv
-
-/tokens
-/logs
-
 scratch.py
+
+/chromedrivers
+/logs
+/tokens
 
 __pycache__

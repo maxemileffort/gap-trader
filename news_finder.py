@@ -1,4 +1,4 @@
-# catalyst finder
+# news catalyst finder
 
 import requests, re, datetime, time, os
 import threading
@@ -13,7 +13,7 @@ from random import seed, random, choice
 
 from settings import CHROMEDRIVER_DIR
 
-def catalyst_finder(symbol):
+def news_finder(symbol):
     # define the location of the Chrome Driver - CHANGE THIS!!!!!
     executable_path = {'executable_path': CHROMEDRIVER_DIR}
 
@@ -69,4 +69,4 @@ def catalyst_finder(symbol):
     print(first_news_entry)
 
 if __name__ == '__main__':
-    catalyst_finder("lhdx")
+    news_finder("lhdx")

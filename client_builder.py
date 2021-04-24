@@ -3,7 +3,7 @@ import atexit
 
 import tda
 
-from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID, CHROMEDRIVER_DIR, CHROME_DIR
+from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID, CHROMEDRIVER_DIR1, CHROME_DIR
 
 client_id = CONSUMER_KEY + "@AMER.OAUTHAP"
 path_to_token = "./tokens/token.json"
@@ -14,7 +14,7 @@ def make_driver():
     
     options = Options()
     options.binary_location = CHROME_DIR
-    driver = webdriver.Chrome(CHROMEDRIVER_DIR, chrome_options=options)
+    driver = webdriver.Chrome(CHROMEDRIVER_DIR1, chrome_options=options)
     atexit.register(lambda: driver.quit())
     return driver
 
