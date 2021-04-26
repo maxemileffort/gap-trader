@@ -82,7 +82,10 @@ def get_updates():
     list_of_files.append(glob.glob("./chromedrivers/2/*.exe")) 
     list_of_files.append(glob.glob("./chromedrivers/3/*.exe")) 
     for file_ in list_of_files:
-        os.remove(file_[0])
+        try:
+            os.remove(file_[0])
+        except:
+            pass
 
     # unzip and remove zips
     list_of_files = glob.glob("./chromedrivers/*.zip") 
@@ -93,7 +96,10 @@ def get_updates():
         with zipfile.ZipFile(file_, 'r') as zip_ref:
             zip_ref.extractall(f"./chromedrivers/{count}/")
             count += 1
-        os.remove(file_)
+        try:
+            os.remove(file_)
+        except:
+            pass
 
 if __name__ == "__main__":
     get_updates()
