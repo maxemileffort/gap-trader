@@ -27,7 +27,6 @@ def get_gaps(url):
     options.add_argument("start-maximized")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
-    browser = Browser('chrome', **executable_path, headless=False, incognito=True, options=options)
 
     # define the components to build a URL
     method = 'GET'
@@ -38,6 +37,7 @@ def get_gaps(url):
 
     # go to the URL
     try:
+        browser = Browser('chrome', **executable_path, headless=False, incognito=True, options=options)
         browser.visit(myurl)
     except:
         # if chrome auto updates and opening a browser fails, 
