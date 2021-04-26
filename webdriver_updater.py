@@ -40,7 +40,7 @@ def get_updates():
     # download new versions
     count = 1
     for link in dl_links:
-        executable_path = {'executable_path': CHROMEDRIVER_DIR1}
+        executable_path = {'executable_path': CHROMEDRIVER_DIR2}
         options = webdriver.ChromeOptions()
         prefs = {
             "download.default_directory" : "./chromedrivers",
@@ -56,7 +56,7 @@ def get_updates():
             browser = Browser('chrome', **executable_path, headless=False, incognito=True, options=options)
             browser.visit(link)
         except:
-            executable_path = {'executable_path': CHROMEDRIVER_DIR2}
+            executable_path = {'executable_path': CHROMEDRIVER_DIR1}
             browser = Browser('chrome', **executable_path, headless=False, incognito=True, options=options)
             browser.visit(link)
 

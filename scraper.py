@@ -20,7 +20,7 @@ def get_gaps(url):
     location_string = f"./csv's/{local_date}-{local_time}-stocks.csv"
 
     # define the location of the Chrome Driver - CHANGE THIS!!!!!
-    executable_path = {'executable_path': CHROMEDRIVER_DIR1}
+    executable_path = {'executable_path': CHROMEDRIVER_DIR2}
 
     # Create a new instance of the browser, make sure we can see it (Headless = False)
     options = webdriver.ChromeOptions()
@@ -42,7 +42,7 @@ def get_gaps(url):
     except:
         # if chrome auto updates and opening a browser fails, 
         # try a different webdriver version
-        executable_path = {'executable_path': CHROMEDRIVER_DIR2}
+        executable_path = {'executable_path': CHROMEDRIVER_DIR1}
         browser = Browser('chrome', **executable_path, headless=False, incognito=True, options=options)
         browser.visit(myurl)
     seed(1)
