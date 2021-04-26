@@ -94,3 +94,6 @@ def get_updates():
             zip_ref.extractall(f"./chromedrivers/{count}/")
             count += 1
         os.remove(file_)
+
+if __name__ == "__main__":
+    get_updates()
