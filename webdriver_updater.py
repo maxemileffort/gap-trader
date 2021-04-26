@@ -12,7 +12,7 @@ from selenium import webdriver
 from splinter import Browser
 
 # these will need to be setup manually the first go around
-from settings import CHROMEDRIVER_DIR1, CHROMEDRIVER_DIR2
+from settings import CHROMEDRIVER_DIR1, CHROMEDRIVER_DIR2, DL_DIR
 
 def get_version_links(href):
     return href and re.compile("chromedriver.storage.googleapis.com").search(href)
@@ -69,7 +69,7 @@ def get_updates():
         browser.quit()
         time.sleep(1)
 
-        download_path = 'C:\\Users\\maxw2\\Downloads\\'
+        download_path = DL_DIR
         new_path = os.getcwd()
         old_file_name = download_path+'chromedriver_win32.zip'
         new_file_name = new_path+f'/chromedrivers/chromedriver_win32-{count}.zip'
