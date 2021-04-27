@@ -7,6 +7,7 @@ from client_builder import build_client
 from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def cancel_all(str_):
+    """ Pass 'all', 'trades', or 'orders' depending on what needs to be canceled. """
     errors = []
     client = build_client()
     # cancel all open orders

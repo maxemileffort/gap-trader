@@ -3,6 +3,7 @@ import glob
 import os
 from pathlib import Path
 import logging
+import math
 
 import pandas as pd
 from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
@@ -351,7 +352,7 @@ def check_long_trades(client):
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "long")
             # start a trailing stop of 7%
-            elif distance_from_stoploss > 7.0:
+            elif distance_from_stoploss > 7 or math.isclose(distance_from_stoploss, 7.25, abs_tol=0.25):
                 check_for_stop(symbol=symbol, new_stop=round(current_price*0.93,2), qty=qty, order_type="long")
                 continue
             # log that there isn't enough profit to move stop
@@ -447,12 +448,16 @@ def rate_limiter(count):
         logging.info("next check in 4...") 
         time.sleep(4) 
 
+def rescan_stocks():
+    # Lost $3k on a paper account due to this. 3/26/21
+    subprocess.Popen(["python", "control.py", "--rescan"])
+
 def run_watchdog(count):
     # poor man's web socket
     while count < 6500:
         count+=1
         try:
-            # run like normal on every check except for the ones at the 15 min mark
+            # run like normal on every check except for the ones at the 30 min marks
             if count % 450 != 0:
                 client = build_client()
                 tCLT = threading.Thread(target=check_long_trades(client))
@@ -464,14 +469,13 @@ def run_watchdog(count):
                 tRL = threading.Thread(target=rate_limiter(count)) # this function has exit conditions
                 tRL.start()
                 tRL.join()
-            # at the 15 min mark, restart the whole process
+            # at every 30 min mark, rescan
             else: 
-                scraper()
-                assess('skip')
-                daily_trader('re-run')
+                rescan_stocks()
         except SystemExit:
             sys.exit()
         except KeyboardInterrupt:
+            cancel_all('all')
             sys.exit()
         except:
             logging.info("something went wrong running process, probably connection timeout.")

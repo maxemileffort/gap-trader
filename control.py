@@ -114,6 +114,10 @@ def eval_choice(choice):
         await_market_open(0)
     elif choice == '9': # exit
         sys.exit()
+    elif choice == 'rescan': # rescan
+        scraper()
+        assess('skip')
+        daily_trader('re-run')
     else: # fat finger or something
         print('try again dummy.')
         present_selection()
@@ -125,7 +129,7 @@ full_cmd_arguments = sys.argv
 argument_list = full_cmd_arguments[1:]
 
 short_options = "12345678"
-long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch", 'auto']
+long_options = ["scrape", "assess", "trade", "s-and-a", "a-and-t", "s-a-and-t", "watch", 'auto', "rescan"]
 
 try:
     arguments, values = getopt.getopt(argument_list, short_options, long_options)
@@ -152,6 +156,8 @@ for current_argument, current_value in arguments:
         eval_choice('7')
     elif current_argument in ("-8", "--auto"):
         eval_choice('8')
+    elif current_argument in ("--rescan"):
+        eval_choice('rescan')
     else:
         present_selection()
 
