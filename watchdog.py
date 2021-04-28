@@ -450,7 +450,10 @@ def rate_limiter(count):
 
 def rescan_stocks():
     # Lost $3k on a paper account due to this. 3/26/21
-    subprocess.Popen(["python", "control.py", "--rescan"])
+    return subprocess.Popen(["python", "control.py", "--rescan"])
+
+def terminate_rescan(child_process):
+    child_process.terminate()
 
 def run_watchdog(count):
     # poor man's web socket

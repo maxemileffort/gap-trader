@@ -122,6 +122,12 @@ def eval_choice(choice):
         print('try again dummy.')
         present_selection()
 
+def rescan():
+    scraper()
+    assess('skip')
+    daily_trader('re-run')
+    sys.exit()
+
 # Get full command-line arguments
 full_cmd_arguments = sys.argv
 
@@ -157,7 +163,7 @@ for current_argument, current_value in arguments:
     elif current_argument in ("-8", "--auto"):
         eval_choice('8')
     elif current_argument in ("--rescan"):
-        eval_choice('rescan')
+        rescan()
     else:
         present_selection()
 
