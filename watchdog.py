@@ -90,7 +90,6 @@ def kill_trade_or_not(symbol, current_price, qty, order_type):
             return True
         else:
             logging.info("Not killing trade.")
-            logging.info("Current price still away from stop_loss")
             return False
     except:
         logging.info(f"Unexpected error checking stops: {sys.exc_info()}")
@@ -320,7 +319,6 @@ def check_long_trades(client):
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 2
-            # logging.info(f"test: {test}")
             symbol_quote_obj = client.get_quote(symbol).json()[symbol]
             current_bid_price = round(float(symbol_quote_obj["bidPrice"]),2)
             current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
@@ -337,7 +335,7 @@ def check_long_trades(client):
             stoploss = grab_current_stoploss(symbol) # only used for moving stop losses
             distance_from_stoploss = round((current_price - stoploss) / stoploss * 100, 2)
             logging.info(f'symbol: {symbol} current price: {current_price} current sl: {stoploss} distance from sl: {distance_from_stoploss}%')
-            logging.info(f'symbol: {symbol} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
+            logging.info(f'symbol: {symbol} entry price: {entry_price} percent gain: {percent_gain} profit/loss: {trade["currentDayProfitLoss"]}')
 
             # check current trades to see if it's time for an exit
             killed_trade = kill_trade_or_not(symbol, current_price, qty, 'long')
@@ -351,9 +349,14 @@ def check_long_trades(client):
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "long")
-            # start a trailing stop of 7%
+            # if a stock moves 5% it should be a free trade or a small gain, 
+            # not a loss like with the trailing stop
+            elif percent_gain >= 5 and percent_gain <= 7:
+                check_for_stop(symbol=symbol, new_stop=round(entry_price*1.01,2), qty=qty, order_type="long")
+                continue
+            # start a trailing stop of 7%, that moves up 1% every time the trade moves up 1%
             elif distance_from_stoploss > 7 or math.isclose(distance_from_stoploss, 7.25, abs_tol=0.25):
-                check_for_stop(symbol=symbol, new_stop=round(current_price*0.93,2), qty=qty, order_type="long")
+                check_for_stop(symbol=symbol, new_stop=round(current_price*0.94,2), qty=qty, order_type="long")
                 continue
             # log that there isn't enough profit to move stop
             else:
@@ -377,7 +380,6 @@ def check_short_trades(client):
             qty = trade["shortQuantity"]
             entry_price = float(trade["averagePrice"])
             exit_price = float(entry_price) * 0.5
-            # logging.info(f"test: {test}")
             symbol_quote_obj = client.get_quote(symbol).json()[symbol]
             current_bid_price = round(float(symbol_quote_obj["bidPrice"]),2)
             current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
