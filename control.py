@@ -52,6 +52,11 @@ def present_selection():
     eval_choice(choice)
 
 def eval_choice(choice):
+    if choice == 'rescan': # rescan
+        scraper()
+        assess('skip')
+        daily_trader('re-run')
+        
     if choice == '1': # scrape only
         print("working...")
         scraper()
@@ -114,10 +119,7 @@ def eval_choice(choice):
         await_market_open(0)
     elif choice == '9': # exit
         sys.exit()
-    elif choice == 'rescan': # rescan
-        scraper()
-        assess('skip')
-        daily_trader('re-run')
+    
     else: # fat finger or something
         print('try again dummy.')
         present_selection()

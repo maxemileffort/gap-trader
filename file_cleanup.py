@@ -15,6 +15,7 @@ def delete_logs():
     sorted_logs = sorted(logs, key=os.path.getctime)
     if len(sorted_logs) > 2:
         os.remove(sorted_logs[0])
+        delete_logs()
 
 def cleanup_files():
     
