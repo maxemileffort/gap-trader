@@ -56,7 +56,8 @@ def eval_choice(choice):
         scraper()
         assess('skip')
         daily_trader('re-run')
-        
+        return
+
     if choice == '1': # scrape only
         print("working...")
         scraper()
