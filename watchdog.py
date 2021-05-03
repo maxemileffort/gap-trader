@@ -433,6 +433,7 @@ def rate_limiter(count):
         timeToClose = 1200
 
     # Close all positions when 15 minutes til market close.
+    logging.info("timeToClose: ", timeToClose)
     if(timeToClose < (60 * 10)):
         logging.info("Market closing soon.  Closing positions.")
         date = datetime.datetime.now()

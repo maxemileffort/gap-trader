@@ -10,6 +10,12 @@ def get_date():
     local_date = date.strftime("%x").replace("/", "_")
     return local_date
 
+def delete_logs():
+    logs = glob.glob("./logs/*.txt")
+    sorted_logs = sorted(logs, key=os.path.getctime)
+    if len(sorted_logs) > 2:
+        os.remove(sorted_logs[0])
+
 def cleanup_files():
     
     current_date = get_date()
@@ -26,6 +32,7 @@ def cleanup_files():
                 # print(just_file_name)
                 os.rename(file_, f'./{folder}/{current_date}{just_file_name}')
 
+    delete_logs()
 
 if __name__ == "__main__":
     cleanup_files()
