@@ -58,7 +58,7 @@ def eval_choice(choice):
         daily_trader('re-run')
         return
 
-    if choice == '1': # scrape only
+    elif choice == '1': # scrape only
         print("working...")
         scraper()
         print("done scraping.")
