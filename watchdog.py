@@ -424,15 +424,11 @@ def rate_limiter(count):
     logging.info(f"Finished run number {count}. Starting next trade check.")
 
     # Figure out when the market will close so we can prepare to sell beforehand.
-    slow_down = count % 120 # clock calls were ending the script prematurely so slowed them down
-    if slow_down == 0:
-        closingTime = time.mktime(datetime.datetime.now().replace(hour=15, minute=0, second=0, microsecond=0).timetuple())
-        currTime = time.mktime(datetime.datetime.now().timetuple())
-        timeToClose = closingTime - currTime
-    else:
-        timeToClose = 1200
+    closingTime = time.mktime(datetime.datetime.now().replace(hour=15, minute=0, second=0, microsecond=0).timetuple())
+    currTime = time.mktime(datetime.datetime.now().timetuple())
+    timeToClose = closingTime - currTime
 
-    # Close all positions when 15 minutes til market close.
+    # Close all positions when 10 minutes til market close.
     logging.info("timeToClose: ", timeToClose)
     if(timeToClose < (60 * 10)):
         logging.info("Market closing soon.  Closing positions.")
