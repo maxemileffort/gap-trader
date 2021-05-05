@@ -450,8 +450,8 @@ def rate_limiter(count):
 def rescan_stocks():
     # Lost $3k on a paper account due to this. 3/26/21
     # possibly fixed 4/28/21
-    return os.system(["python control.py --rescan"])
-    # return subprocess.Popen(["python", "control.py", "--rescan"])
+    # return os.system("python control.py --rescan") # doesn't multi-thread
+    return subprocess.Popen(["python", "control.py", "--rescan"])
 
 def run_watchdog(count):
     # poor man's web socket
@@ -459,6 +459,7 @@ def run_watchdog(count):
         count+=1
         try:
             # run like normal on every check except for the ones at the 30 min marks
+            # if count % 5 != 0 and count < 10:
             if count % 450 != 0:
                 client = build_client()
                 tCLT = threading.Thread(target=check_long_trades(client))
