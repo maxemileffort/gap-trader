@@ -73,9 +73,9 @@ def get_updates():
         new_path = os.getcwd()
         old_file_name = download_path+'chromedriver_win32.zip'
         new_file_name = new_path+f'/chromedrivers/chromedriver_win32-{count}.zip'
-        count += 1
         move(old_file_name, new_file_name)
         time.sleep(1)
+        count += 1
 
     # remove old versions
     list_of_files = [glob.glob("./chromedrivers/1/*.exe")]

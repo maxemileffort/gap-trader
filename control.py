@@ -77,9 +77,9 @@ def eval_choice(choice):
     elif choice == '4': # scrape and assess
         scraper()
         print("working...")
-        time.sleep(10)
+        time.sleep(1)
         print("almost done...")
-        time.sleep(10)
+        time.sleep(1)
         print("done scraping.")
         print("creating assessment...")
         assess('skip')
@@ -99,9 +99,9 @@ def eval_choice(choice):
     elif choice == '6': # all 3
         scraper()
         print("working...")
-        time.sleep(10)
+        time.sleep(1)
         print("almost done...")
-        time.sleep(10)
+        time.sleep(1)
         print("done scraping.")
         print("creating assessment...")
         assess('skip')
@@ -116,8 +116,10 @@ def eval_choice(choice):
         print("Starting watchdog...")
         time.sleep(1)
         run_watchdog(0)
+        return
     elif choice == '8': # runs all 3 after waiting for market to open, then begins watchdog
         await_market_open(0)
+        return
     elif choice == '9': # exit
         sys.exit()
     
