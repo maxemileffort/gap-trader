@@ -15,6 +15,7 @@ from canceler import cancel_all
 from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 
 def create_order(client, symbol, entry_price, qty, order_type):
+    """ Takes client, symbol, entry_price, qty, and order_type ('long' or 'short') """
     if order_type == "short":
         try:
             client.place_order(

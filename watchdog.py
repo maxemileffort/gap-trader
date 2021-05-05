@@ -12,7 +12,7 @@ from tda.orders.common import OrderType
 from settings import CALLBACK_URL, CONSUMER_KEY, ACCOUNT_ID
 from canceler import cancel_all
 from scraper import scraper
-from trader import daily_trader
+from trader import daily_trader, create_order
 from assessor import assess
 from client_builder import build_client
 from file_cleanup import cleanup_files
@@ -318,11 +318,11 @@ def check_long_trades(client):
                 continue
             qty = trade["longQuantity"]
             entry_price = float(trade["averagePrice"])
-            exit_price = float(entry_price) * 2
+            exit_price = round(float(entry_price) * 1.2, 2)
             symbol_quote_obj = client.get_quote(symbol).json()[symbol]
             current_bid_price = round(float(symbol_quote_obj["bidPrice"]),2)
             current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
-            current_price = (current_ask_price + current_bid_price) / 2
+            current_price = round((current_ask_price + current_bid_price) / 2, 2)
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks make sure stop loss is trailing. 
@@ -349,6 +349,7 @@ def check_long_trades(client):
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "long")
+                create_order(client, symbol, current_price, qty, "long")
             # if a stock moves 5% it should be a free trade or a small gain, 
             # not a loss like with the trailing stop
             elif percent_gain >= 5 and percent_gain <= 7:
