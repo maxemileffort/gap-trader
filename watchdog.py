@@ -476,6 +476,7 @@ def run_watchdog(count):
             else: 
                 rescan_stocks()
         except SystemExit:
+            cancel_all('all')
             sys.exit()
         except KeyboardInterrupt:
             cancel_all('all')
