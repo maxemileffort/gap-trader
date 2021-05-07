@@ -32,7 +32,7 @@ def assess(str):
         pass
 
     # get 2 latest csv's from csv's directory
-    list_of_files = glob.glob("./csv's/*.csv") # * means all if need specific format then *.csv
+    list_of_files = glob.glob("./csv's/raw/*.csv") # * means all if need specific format then *.csv
     sorted_files = sorted(list_of_files, key=os.path.getctime)
     recent_gap_down = sorted_files[-1] # last file is gap downs, due to order in which they are scraped
     recent_gap_up = sorted_files[-2] # second to last will be gap ups
