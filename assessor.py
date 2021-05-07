@@ -57,8 +57,8 @@ def assess(str):
         bottom_limit = 0.01
         upper_limit = 10.0
     else:
-        bottom_limit = 3.0
-        upper_limit = 17.0
+        bottom_limit = 1.0
+        upper_limit = 11.0
         
     # analyze gap ups first
     # trade these, as they have something working favorably for them
