@@ -17,7 +17,7 @@ def get_gaps(url):
     date = datetime.datetime.now()
     local_date = date.strftime("%x").replace("/", "_")
     local_time = date.strftime("%X").replace(":", "")
-    location_string = f"./csv's/{local_date}-{local_time}-stocks.csv"
+    location_string = f"./csv's/raw/{local_date}-{local_time}-stocks.csv"
 
     # define the location of the Chrome Driver - CHANGE THIS!!!!!
     executable_path = {'executable_path': CHROMEDRIVER_DIR2}
