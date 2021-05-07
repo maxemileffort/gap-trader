@@ -1,11 +1,15 @@
 import datetime, time, csv, threading, sys, subprocess
 import glob
-import os
-from pathlib import Path
+import json
 import logging
 import math
+import os
+from pathlib import Path
+from pprint import pprint
 
 import pandas as pd
+from ta.volume import VolumeWeightedAveragePrice
+from ta.trend import EMAIndicator
 from tda.orders.equities import equity_buy_limit, equity_buy_market, equity_sell_market
 from tda.orders.common import OrderType
 
@@ -50,19 +54,58 @@ def start_test(count):
         symbols = ['CRBP', 'QD', 'WPG', 'ANY']
 
         for symbol in symbols:
-            client.place_order(
-                account_id=ACCOUNT_ID, 
-                order_spec=equity_buy_market(symbol, 5)
-            )
+            ph = client.get_price_history(symbol=symbol, 
+                                          period_type=client.PriceHistory.PeriodType.DAY, 
+                                          period=client.PriceHistory.Period.ONE_DAY, 
+                                          frequency_type=client.PriceHistory.FrequencyType.MINUTE, 
+                                          frequency=client.PriceHistory.Frequency.EVERY_FIFTEEN_MINUTES, 
+                                          start_datetime=None, 
+                                          end_datetime=None, 
+                                          need_extended_hours_data=None).json()
+            print(ph['symbol'])
+            df = pd.json_normalize(ph, 'candles')
+            # pprint(len(df))
+            # pprint(df)
+            # pprint(df['close'])
+            # pprint(df['high'])
+            # pprint(df['low'])
+            # pprint(df['volume'])
+            raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=1)
+            raw_ema = EMAIndicator(close=df['close'], window=1)
+            print("vwap:")
+            pprint(raw_vwap.vwap[len(raw_vwap.vwap)-1])
+            print("ema:")
+            pprint(raw_ema._close[len(raw_ema._close)-1])
+            print("len ema:")
+            print(len(raw_ema._close))
 
-        time.sleep(10)
+def get_bars(client, symbol):
+    ph = client.get_price_history(symbol=symbol, 
+                                    period_type=client.PriceHistory.PeriodType.DAY, 
+                                    period=client.PriceHistory.Period.ONE_DAY, 
+                                    frequency_type=client.PriceHistory.FrequencyType.MINUTE, 
+                                    frequency=client.PriceHistory.Frequency.EVERY_FIFTEEN_MINUTES, 
+                                    start_datetime=None, 
+                                    end_datetime=None, 
+                                    need_extended_hours_data=None).json()
+    df = pd.json_normalize(ph, 'candles')
+    return df
 
-        for symbol in symbols:
-            client.place_order(
-                account_id=ACCOUNT_ID, 
-                order_spec=equity_sell_market(symbol, 5)
-            )
-    run_watchdog(0)
+def get_ema(client, symbol):
+    df = get_bars(client, symbol)
+    
+    raw_ema = EMAIndicator(close=df['close'], window=1)
+    
+    # print("ema:")
+    return raw_ema._close[len(raw_ema._close)-1]
+
+def get_vwap(client, symbol):
+    df = get_bars(client, symbol)
+    
+    raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=1)
+
+    # print("vwap:")
+    return raw_vwap.vwap[len(raw_vwap.vwap)-1]
 
 def kill_trade_or_not(symbol, current_price, qty, order_type):
     # find monitor file
@@ -324,6 +367,8 @@ def check_long_trades(client):
             current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
             current_price = round((current_ask_price + current_bid_price) / 2, 2)
             percent_gain = round((current_price - entry_price) / entry_price * 100, 2)
+            vwap = get_vwap(client, symbol)
+            ema = get_ema(client, symbol)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks make sure stop loss is trailing. 
             # "Continue" lines are important for speeding up the process of checking stops for multiple stocks
@@ -345,6 +390,9 @@ def check_long_trades(client):
                 pass
             # kill trade if it drops 7% below entry
             if percent_gain <= -7:
+                kill_trade(symbol, qty, current_price, "long")
+            # kill trade if it drops below vwap and ema
+            elif current_price < vwap and current_price < ema:
                 kill_trade(symbol, qty, current_price, "long")
             # cash in winners
             elif current_price >= exit_price:
@@ -459,9 +507,9 @@ def run_watchdog(count):
     while count < 6500:
         count+=1
         try:
-            # run like normal on every check except for the ones at the 30 min marks
+            # run like normal on every check except for the ones at the 1hr marks
             # if count % 5 != 0 and count < 10:
-            if count % 450 != 0:
+            if count % 900 != 0:
                 client = build_client()
                 tCLT = threading.Thread(target=check_long_trades(client))
                 tCLT.start()
@@ -472,7 +520,7 @@ def run_watchdog(count):
                 tRL = threading.Thread(target=rate_limiter(count)) # this function has exit conditions
                 tRL.start()
                 tRL.join()
-            # at every 30 min mark, rescan
+            # at every 1hr mark, rescan
             else: 
                 rescan_stocks()
         except SystemExit:
