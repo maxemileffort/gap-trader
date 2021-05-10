@@ -84,7 +84,7 @@ def get_bars(client, symbol):
                                     period_type=client.PriceHistory.PeriodType.DAY, 
                                     period=client.PriceHistory.Period.ONE_DAY, 
                                     frequency_type=client.PriceHistory.FrequencyType.MINUTE, 
-                                    frequency=client.PriceHistory.Frequency.EVERY_FIFTEEN_MINUTES, 
+                                    frequency=client.PriceHistory.Frequency.EVERY_FIVE_MINUTES, 
                                     start_datetime=None, 
                                     end_datetime=None, 
                                     need_extended_hours_data=None).json()
@@ -94,7 +94,7 @@ def get_bars(client, symbol):
 def get_ema(client, symbol):
     df = get_bars(client, symbol)
     
-    raw_ema = EMAIndicator(close=df['close'], window=1)
+    raw_ema = EMAIndicator(close=df['close'], window=14)
     
     # print("ema:")
     return raw_ema._close[len(raw_ema._close)-1]
@@ -102,7 +102,7 @@ def get_ema(client, symbol):
 def get_vwap(client, symbol):
     df = get_bars(client, symbol)
     
-    raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=1)
+    raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=14)
 
     # print("vwap:")
     return raw_vwap.vwap[len(raw_vwap.vwap)-1]
