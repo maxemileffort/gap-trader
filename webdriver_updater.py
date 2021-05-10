@@ -64,7 +64,7 @@ def get_updates():
         dl_button = browser.links.find_by_partial_href('chromedriver_win32.zip')
         time.sleep(1)
         dl_button.click()
-        time.sleep(3)
+        time.sleep(5)
 
         browser.quit()
         time.sleep(1)
