@@ -70,8 +70,8 @@ def start_test(count):
             # pprint(df['high'])
             # pprint(df['low'])
             # pprint(df['volume'])
-            raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=1)
-            raw_ema = EMAIndicator(close=df['close'], window=1)
+            raw_vwap = VolumeWeightedAveragePrice(high=df['high'], low=df['low'], close=df['close'], volume=df['volume'], window=14)
+            raw_ema = EMAIndicator(close=df['close'], window=9)
             print("vwap:")
             pprint(raw_vwap.vwap[len(raw_vwap.vwap)-1])
             print("ema:")
@@ -94,7 +94,7 @@ def get_bars(client, symbol):
 def get_ema(client, symbol):
     df = get_bars(client, symbol)
     
-    raw_ema = EMAIndicator(close=df['close'], window=14)
+    raw_ema = EMAIndicator(close=df['close'], window=9)
     
     # print("ema:")
     return raw_ema._close[len(raw_ema._close)-1]
@@ -397,7 +397,6 @@ def check_long_trades(client):
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "long")
-                create_order(client, symbol, current_price, qty, "long")
             # if a stock moves 5% it should be a free trade or a small gain, 
             # not a loss like with the trailing stop
             elif percent_gain >= 5 and percent_gain <= 7:
@@ -507,9 +506,15 @@ def run_watchdog(count):
     while count < 6500:
         count+=1
         try:
-            # run like normal on every check except for the ones at the 1hr marks
+            # for the first hour, rescan every 15 min
             # if count % 5 != 0 and count < 10:
-            if count % 900 != 0:
+            if count <= 900 and count % 225 == 0:
+                rescan_stocks()
+            # for the rest of the day, rescan every hour
+            elif count > 900 and count % 900 == 0:
+                rescan_stocks()
+            # otherwise, run watchdog
+            else: 
                 client = build_client()
                 tCLT = threading.Thread(target=check_long_trades(client))
                 tCLT.start()
@@ -520,9 +525,6 @@ def run_watchdog(count):
                 tRL = threading.Thread(target=rate_limiter(count)) # this function has exit conditions
                 tRL.start()
                 tRL.join()
-            # at every 1hr mark, rescan
-            else: 
-                rescan_stocks()
         except SystemExit:
             cancel_all('all')
             sys.exit()
