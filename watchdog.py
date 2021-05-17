@@ -433,6 +433,8 @@ def check_short_trades(client):
             current_ask_price = round(float(symbol_quote_obj["askPrice"]),2)
             current_price = (current_ask_price + current_bid_price) / 2
             percent_gain = round((entry_price - current_price) / entry_price * 100, 2)
+            vwap = get_vwap(client, symbol)
+            ema = get_ema(client, symbol)
             # first check, on script start up. They should all return false, which leads to creation of the stops and tp's.
             # The rest of the checks make sure stop loss is trailing. 
             # "Continue" lines are important for speeding up the process of checking stops for multiple stocks
@@ -455,12 +457,15 @@ def check_short_trades(client):
              # kill trade if it drops 7% below entry
             if percent_gain <= -7:
                 kill_trade(symbol, qty, current_price, "short")
+            # kill trade if it rises above vwap and ema
+            elif current_price > vwap and current_price > ema:
+                kill_trade(symbol, qty, current_price, "short")
             # cash in winners
             elif current_price >= exit_price:
                 kill_trade(symbol, qty, current_price, "short")
             # start a trailing stop of 7%
-            elif distance_from_stoploss > 7.0:
-                check_for_stop(symbol=symbol, new_stop=round(current_price*1.07,2), qty=qty, order_type="short")
+            elif distance_from_stoploss > 7.0 or math.isclose(distance_from_stoploss, 7.25, abs_tol=0.25):
+                check_for_stop(symbol=symbol, new_stop=round(current_price*1.06,2), qty=qty, order_type="short")
                 continue
             # log that there isn't enough profit to move stop
             else:
