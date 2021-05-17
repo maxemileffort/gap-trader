@@ -135,12 +135,12 @@ def daily_trader(str_):
             # if the price has moved down more than 15 cents, avg + 0.15 will be lower than last, and try to short the stock
             if avg_price + 0.15 < last: 
                 order_type = "short"
-                entry_price = round(last - 0.30, 2)
+                entry_price = round(last - 0.10, 2)
                 sl_price = str(round(entry_price * 1.07, 2))
             # otherwise, price is stable or moving up, so make a long order
             else: 
                 order_type = "long"
-                entry_price = round(last + 0.30, 2)
+                entry_price = round(last + 0.10, 2)
                 sl_price = str(round(entry_price * 0.93, 2))
             qty = int(round(investment_per_trade / entry_price, 0))
             print(f"qty is {qty}")
