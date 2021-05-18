@@ -51,7 +51,7 @@ def cleanup_files():
                 # print(file_)
                 just_file_name = file_.replace(f"./{folder}", "")
                 # print(just_file_name)
-                os.rename(file_, f'./{folder}/{current_date}{just_file_name}')
+                os.rename(file_, f'./{folder}/{current_date}/{just_file_name}')
 
     delete_logs()
     delete_old_folders()
