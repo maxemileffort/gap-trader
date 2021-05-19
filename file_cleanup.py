@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 import shutil
 
-folder_names = ["csv's", "csv's/monitors", "csv's/reports", "csv's/trades", "csv's/watches"]
+folder_names = ["csv's/raw", "csv's/monitors", "csv's/reports", "csv's/trades", "csv's/watches"]
 
 def get_date():
     date = datetime.datetime.now()
