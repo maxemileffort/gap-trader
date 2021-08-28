@@ -30,3 +30,18 @@ CALLBACK_URL=<exactly what is on your app that you created>
 CONSUMER_KEY=<your consumer key>
 ACCOUNT_ID=<your numerical account number>
 ```
+
+## Does it work?
+
+This is day trading on a paper account:
+
+![started algorithm development](./readme-files/alpaca-start.jpg)
+Started with a fresh account going in to development.
+
+![finished algorithm development](./readme-files/alpaca-dev-done.jpg)
+What the account looked like after development (~$60k USD, which would be a decent starting point for a lot of people)
+
+![after 3 weeks of running](./readme-files/alpaca-3-weeks.jpg)
+Made the money back, plus some! All in 3 weeks.
+
+## ***Note: This is not financial advice. Speak to someone that knows about money before trying this with your own real money.***
